@@ -1,5 +1,6 @@
 from gmssl import * #pylint: disable = e0401 
 from typing import Tuple, Callable
+import random
 
 # 生成密钥对模块
 class CurveFp:
@@ -137,7 +138,7 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     
     g = (sm2p256v1.Gx, sm2p256v1.Gy)
     
-    tmp_u = sec
+    tmp_u = random.randint(0, sm2p256v1.P)
     U = multiply(g, tmp_u)
     
     hash2 = Sm3() #pylint: disable=e0602
