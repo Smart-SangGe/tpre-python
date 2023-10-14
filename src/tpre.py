@@ -12,7 +12,7 @@ class CurveFp:
         self.Gx = Gx
         self.Gy = Gy
         self.name = name
- 
+        
 sm2p256v1 = CurveFp(
     name="sm2p256v1",
     A=0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC,
@@ -125,10 +125,11 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     sec: an init safety param
     
     return:
+<<<<<<< HEAD
     G: sm2 curve
     g: generator
     U: another generator
-    sm3
+    use sm3 as hash function
     hash2: G^2 -> Zq 
     hash3: G^3 -> Zq
     hash4: G^3 * Zq -> Zq
@@ -141,11 +142,38 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     tmp_u = random.randint(0, sm2p256v1.P)
     U = multiply(g, tmp_u)
     
-    hash2 = Sm3() #pylint: disable=e0602
+    def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in double_G:
+            for j in i:
+                sm3.update(j.to_bytes())
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
     
-    hash3 = Sm3() #pylint: disable=e0602
+    def hash3(triple_G: Tuple[Tuple[int, int], 
+                              Tuple[int, int],
+                              Tuple[int, int]]) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in triple_G:
+            for j in i:
+                sm3.update(j.to_bytes())
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
     
-    hash4 = Sm3() #pylint: disable=e0602
+    def hash4(triple_G: Tuple[Tuple[int, int],
+                              Tuple[int, int],
+                              Tuple[int, int]],
+                Zp: int) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in triple_G:
+            for j in i:
+                sm3.update(j.to_bytes())
+        sm3.update(Zp.to_bytes())
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
     
     KDF = Sm3() #pylint: disable=e0602
     
@@ -169,11 +197,22 @@ def GenerateKeyPair(
     public_key_x = int.from_bytes(bytes(sm2.public_key.x),"big")
     public_key_y = int.from_bytes(bytes(sm2.public_key.y),"big")
     public_key = (public_key_x, public_key_y)
+      
     
     secret_key = int.from_bytes(bytes(sm2.private_key),"big")
     
     return public_key, secret_key
     
 
-def Enc(pk, m):
-    pass
+def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
+    Tuple[int, int],Tuple[int, int], int], int]:
+    enca = Encapsulate(pk)
+    K = enca[0]
+    capsule = enca[1]
+    
+    sm4_enc = Sm4Cbc(key, iv, DO_ENCRYPT) #pylint: disable=e0602
+    plain_Data = m.to_bytes()
+    enc_Data = sm4_enc.update(plain_Data)
+    enc_Data += sm4_enc.finish()
+    enc_message = (capsule, enc_Data)
+    return enc_message
