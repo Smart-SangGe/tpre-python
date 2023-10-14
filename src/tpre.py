@@ -1,5 +1,6 @@
 from gmssl import * #pylint: disable = e0401 
 from typing import Tuple, Callable
+import random
 
 # 生成密钥对模块
 class CurveFp:
@@ -28,7 +29,7 @@ def multiply(a: Tuple[int, int], n: int) -> Tuple[int, int]:
     P = sm2p256v1.P 
     return fromJacobian(jacobianMultiply(toJacobian(a), n, N, A, P), P)
 
-def add(a: Tuple[int, int], b: Tuple[int, int], A: int, P: int) -> Tuple[int, int]:
+def add(a: Tuple[int, int], b: Tuple[int, int]) -> Tuple[int, int]:
     A = sm2p256v1.A
     P = sm2p256v1.P
     return fromJacobian(jacobianAdd(toJacobian(a), toJacobian(b), A, P), P)
@@ -116,22 +117,44 @@ def jacobianMultiply(
         return jacobianAdd(jacobianDouble(jacobianMultiply((Xp, Yp, Zp), n // 2, N, A, P), A, P), (Xp, Yp, Zp), A, P)
     raise ValueError("jacobian Multiply error")
         
-def Setup(sec: int) -> Tuple[int, int, int, Callable, Callable, Callable, Callable]:
+def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
+                             Tuple[int, int], Callable,
+                             Callable, Callable, Callable]:
     '''
     params:
     sec: an init safety param
     
     return:
-    G: 
-    
+    G: sm2 curve
+    g: generator
+    U: another generator
+    sm3
+    hash2: G^2 -> Zq 
+    hash3: G^3 -> Zq
+    hash4: G^3 * Zq -> Zq
     '''
+    
+    G = sm2p256v1
+    
+    g = (sm2p256v1.Gx, sm2p256v1.Gy)
+    
+    tmp_u = random.randint(0, sm2p256v1.P)
+    U = multiply(g, tmp_u)
+    
+    hash2 = Sm3() #pylint: disable=e0602
+    
+    hash3 = Sm3() #pylint: disable=e0602
+    
+    hash4 = Sm3() #pylint: disable=e0602
+    
+    KDF = Sm3() #pylint: disable=e0602
     
     return G, g, U, hash2, hash3, hash4, KDF
 
 def GenerateKeyPair(
     lamda_parma: int, 
     public_params: tuple
-    ) -> Tuple[Tuple[bytes, bytes], bytes]:
+    ) -> Tuple[Tuple[int, int], int]:
     '''
     params: 
     lamda_param: an init safety param 
@@ -140,16 +163,14 @@ def GenerateKeyPair(
     return:
     public_key, secret_key
     '''
-    sm2 = Sm2Key()
+    sm2 = Sm2Key() #pylint: disable=e0602
     sm2.generate_key()
-    public_key_x = bytes(sm2.public_key.x)
-    public_key_y = bytes(sm2.public_key.y)
+    
+    public_key_x = int.from_bytes(bytes(sm2.public_key.x),"big")
+    public_key_y = int.from_bytes(bytes(sm2.public_key.y),"big")
     public_key = (public_key_x, public_key_y)
-    secret_key = bytes(sm2.private_key)
-    print(private_key)
     
-    
-    
+    secret_key = int.from_bytes(bytes(sm2.private_key),"big")
     
     return public_key, secret_key
     
