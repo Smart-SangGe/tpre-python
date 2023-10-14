@@ -22,9 +22,6 @@ sm2p256v1 = CurveFp(
     Gx=0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7,
     Gy=0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
 )
-
-# sec需要重新设置
-sec = 256  
  
 def multiply(a: Tuple[int, int], n: int) -> Tuple[int, int]:
     N = sm2p256v1.N
@@ -178,7 +175,15 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
         digest = int.from_bytes(digest,'big') % sm2p256v1.P
         return digest
     
-    KDF = Sm3() #pylint: disable=e0602
+    # KDF = Sm3() #pylint: disable=e0602
+    def KDF(double_G: Tuple[int, int], num: int) -> int:
+        sm3 = Sm3()
+        for i in double_G:
+            sm3.update(i.to_bytes(32))
+        sm3.update(num.to_bytes(32))
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
     
     return G, g, U, hash2, hash3, hash4, KDF
 
@@ -205,7 +210,6 @@ def GenerateKeyPair(
     secret_key = int.from_bytes(bytes(sm2.private_key),"big")
     
     return public_key, secret_key
-    
 
 def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     Tuple[int, int],Tuple[int, int], int], int]:
@@ -246,31 +250,39 @@ def f(x: int, f_modulus: list, T: int) -> int:
         res += f_modulus[i] * pow(x, i)
     return res
 
-def GenerateReKey(N: int, T: int) -> list:
+# 生成A和B的公钥和私钥
+pk_A, sk_A = GenerateKeyPair(0, ())
+pk_B, sk_B = GenerateKeyPair(0, ())
+
+# sec需要重新设置
+sec = 256  
+
+# 调用Setup函数
+G, g, U, hash2, hash3, hash4, KDF = Setup(sec)
+
+def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
     '''
     param: skA, pkB, N(节点总数), T(阈值)
     return rki(0 <= i <= N-1)
     '''
-    g_a, a = GenerateKeyPair(0, ())
-    g_b, b = GenerateKeyPair(0, ())
     # 计算临时密钥对(x_A, X_A)
     x_A = random.randint(0, G.P - 1)
     X_A = multiply(g, x_A)                
 
     # d是Bob的密钥对与临时密钥对的非交互式Diffie-Hellman密钥交换的结果
-    d = hash3((X_A, multiply(g, b), multiply(g, b * x_A)))   
+    d = hash3((X_A, pk_B, multiply(pk_B, x_A)))   
     
     # 计算多项式系数, 确定代理节点的ID(一个点)
     f_modulus = []
     # 计算f0
-    f0 = (a * inv(d, G.P)) % G.P
+    f0 = (sk_A * inv(d, G.P)) % G.P
     f_modulus.append(f0)
     # 计算fi(1 <= i <= T - 1)
     for i in range(1, T):
         f_modulus.append(random.randint(0, G.P - 1))
 
     # 计算D
-    D = H6((X_A, multiply(g, b), multiply(g, b * a)))
+    D = H6((X_A, pk_B, multiply(pk_B, sk_A)))
 
     # 计算KF
     KF = []
@@ -285,9 +297,12 @@ def GenerateReKey(N: int, T: int) -> list:
 
     return KF
 
-# 测试GenerateReky函数
-# G, g, U, hash2, hash3, hash4, KDF = Setup(sec)
-# KF = GenerateReKey(30, 20)
-# for i in KF:
-#     for j in i:
-#         print(j)
+def Encapsulate(pk_A: Tuple[int, int]) -> Tuple[int, Tuple[Tuple[int, int], Tuple[int, int], int]]:
+    r = random.randint(0, G.P - 1)
+    u = random.randint(0, G.P - 1)
+    E = multiply(g, r)
+    V = multiply(g, u)
+    s = u + r * hash2((E, V))
+    K = KDF(pk_A, r + u)
+    capsule = (E, V, s)
+    return (K, capsule)
