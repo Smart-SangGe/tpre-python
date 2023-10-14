@@ -125,6 +125,7 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     sec: an init safety param
     
     return:
+<<<<<<< HEAD
     G: sm2 curve
     g: generator
     U: another generator
@@ -196,6 +197,7 @@ def GenerateKeyPair(
     public_key_x = int.from_bytes(bytes(sm2.public_key.x),"big")
     public_key_y = int.from_bytes(bytes(sm2.public_key.y),"big")
     public_key = (public_key_x, public_key_y)
+      
     
     secret_key = int.from_bytes(bytes(sm2.private_key),"big")
     
