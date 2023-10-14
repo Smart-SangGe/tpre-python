@@ -1,5 +1,6 @@
 from gmssl import * #pylint: disable = e0401 
 from typing import Tuple, Callable
+import random
 
 # 生成密钥对模块
 class CurveFp:
@@ -11,7 +12,7 @@ class CurveFp:
         self.Gx = Gx
         self.Gy = Gy
         self.name = name
- 
+        
 sm2p256v1 = CurveFp(
     name="sm2p256v1",
     A=0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC,
@@ -28,7 +29,7 @@ def multiply(a: Tuple[int, int], n: int) -> Tuple[int, int]:
     P = sm2p256v1.P 
     return fromJacobian(jacobianMultiply(toJacobian(a), n, N, A, P), P)
 
-def add(a: Tuple[int, int], b: Tuple[int, int], A: int, P: int) -> Tuple[int, int]:
+def add(a: Tuple[int, int], b: Tuple[int, int]) -> Tuple[int, int]:
     A = sm2p256v1.A
     P = sm2p256v1.P
     return fromJacobian(jacobianAdd(toJacobian(a), toJacobian(b), A, P), P)
@@ -116,22 +117,72 @@ def jacobianMultiply(
         return jacobianAdd(jacobianDouble(jacobianMultiply((Xp, Yp, Zp), n // 2, N, A, P), A, P), (Xp, Yp, Zp), A, P)
     raise ValueError("jacobian Multiply error")
         
-def Setup(sec: int) -> Tuple[int, int, int, Callable, Callable, Callable, Callable]:
+def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
+                             Tuple[int, int], Callable,
+                             Callable, Callable, Callable]:
     '''
     params:
     sec: an init safety param
     
     return:
-    G: 
-    
+<<<<<<< HEAD
+    G: sm2 curve
+    g: generator
+    U: another generator
+    use sm3 as hash function
+    hash2: G^2 -> Zq 
+    hash3: G^3 -> Zq
+    hash4: G^3 * Zq -> Zq
     '''
+    
+    G = sm2p256v1
+    
+    g = (sm2p256v1.Gx, sm2p256v1.Gy)
+    
+    tmp_u = random.randint(0, sm2p256v1.P)
+    U = multiply(g, tmp_u)
+    
+    def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in double_G:
+            for j in i:
+                sm3.update(j.to_bytes())
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
+    
+    def hash3(triple_G: Tuple[Tuple[int, int], 
+                              Tuple[int, int],
+                              Tuple[int, int]]) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in triple_G:
+            for j in i:
+                sm3.update(j.to_bytes())
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
+    
+    def hash4(triple_G: Tuple[Tuple[int, int],
+                              Tuple[int, int],
+                              Tuple[int, int]],
+                Zp: int) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in triple_G:
+            for j in i:
+                sm3.update(j.to_bytes())
+        sm3.update(Zp.to_bytes())
+        digest = sm3.digest()
+        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        return digest
+    
+    KDF = Sm3() #pylint: disable=e0602
     
     return G, g, U, hash2, hash3, hash4, KDF
 
 def GenerateKeyPair(
     lamda_parma: int, 
     public_params: tuple
-    ) -> Tuple[Tuple[bytes, bytes], bytes]:
+    ) -> Tuple[Tuple[int, int], int]:
     '''
     params: 
     lamda_param: an init safety param 
@@ -140,19 +191,28 @@ def GenerateKeyPair(
     return:
     public_key, secret_key
     '''
-    sm2 = Sm2Key()
+    sm2 = Sm2Key() #pylint: disable=e0602
     sm2.generate_key()
-    public_key_x = bytes(sm2.public_key.x)
-    public_key_y = bytes(sm2.public_key.y)
+    
+    public_key_x = int.from_bytes(bytes(sm2.public_key.x),"big")
+    public_key_y = int.from_bytes(bytes(sm2.public_key.y),"big")
     public_key = (public_key_x, public_key_y)
-    secret_key = bytes(sm2.private_key)
-    print(private_key)
+      
     
-    
-    
+    secret_key = int.from_bytes(bytes(sm2.private_key),"big")
     
     return public_key, secret_key
     
 
-def Enc(pk, m):
-    pass
+def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
+    Tuple[int, int],Tuple[int, int], int], int]:
+    enca = Encapsulate(pk)
+    K = enca[0]
+    capsule = enca[1]
+    
+    sm4_enc = Sm4Cbc(key, iv, DO_ENCRYPT) #pylint: disable=e0602
+    plain_Data = m.to_bytes()
+    enc_Data = sm4_enc.update(plain_Data)
+    enc_Data += sm4_enc.finish()
+    enc_message = (capsule, enc_Data)
+    return enc_message
