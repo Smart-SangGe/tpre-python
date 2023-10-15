@@ -6,11 +6,23 @@ This project is designed for the National Cryptography Competition and is implem
 
 The project uses the Chinese national standard cryptography algorithm to implement distributed proxy re-encryption (TPRE).
 
+## Project Structure
+.
+├── basedockerfile (being used to build base iamge)
+├── dockerfile (being used to build application)
+├── include (gmssl header)
+├── lib (gmssl shared object)
+├── LICENSE
+├── README_en.md
+├── README.md
+├── requirements.txt
+└── src (application source code)
+
 ## Environment Dependencies
 
 System requirements:  
 - Linux
-- Windows
+- Windows(may need to complie and install gmssl yourself)
 
 The project relies on the following software:  
 - Python 3.11
@@ -25,6 +37,26 @@ Visit [GmSSL](https://github.com/guanzhi/GmSSL) to learn how to install.
 
 ```bash
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+
+## Docker Installation
+my docker version:
+- Version:           24.0.5
+- API version:       1.43
+- Go version:        go1.20.6
+
+### Use base image and build yourself
+```bash
+docker pull git.mamahaha.work/sangge/tpre:base  
+docker build . -t your_image_name
+docker run your_image_name
+```
+
+### Use pre-build image
+```bash
+docker pull git.mamahaha.work/sangge/tpre:latest
+docker run git.mamahaha.work/sangge/tpre:latest
 ```
 
 ## Usage Instructions
