@@ -7,16 +7,16 @@ This project is designed for the National Cryptography Competition and is implem
 The project uses the Chinese national standard cryptography algorithm to implement distributed proxy re-encryption (TPRE).
 
 ## Project Structure
-.
-├── basedockerfile (being used to build base iamge)
-├── dockerfile (being used to build application)
-├── include (gmssl header)
-├── lib (gmssl shared object)
-├── LICENSE
-├── README_en.md
-├── README.md
-├── requirements.txt
-└── src (application source code)
+.  
+├── basedockerfile (being used to build base iamge)  
+├── dockerfile (being used to build application)  
+├── include (gmssl header)  
+├── lib (gmssl shared object)  
+├── LICENSE  
+├── README_en.md  
+├── README.md  
+├── requirements.txt  
+└── src (application source code)  
 
 ## Environment Dependencies
 
@@ -63,7 +63,7 @@ docker run git.mamahaha.work/sangge/tpre:latest
 
 
 ## References  
-[TPRE Algorithm Blog Post](https://www.cnblogs.com/pam-sh/p/17364656.html#tprelib%E7%AE%97%E6%B3%95)
+[TPRE Algorithm Blog Post](https://www.cnblogs.com/pam-sh/p/17364656.html#tprelib%E7%AE%97%E6%B3%95)  
 [Gmssl-python library](https://github.com/GmSSL/GmSSL-Python)
 
 
