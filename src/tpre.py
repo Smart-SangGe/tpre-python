@@ -117,7 +117,7 @@ def jacobianMultiply(
         return jacobianAdd(jacobianDouble(jacobianMultiply((Xp, Yp, Zp), n // 2, N, A, P), A, P), (Xp, Yp, Zp), A, P)
     raise ValueError("jacobian Multiply error")
         
-def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
+def Setup() -> Tuple[CurveFp, Tuple[int, int], 
                              Tuple[int, int], Callable,
                              Callable, Callable, Callable]:
     '''
@@ -125,7 +125,6 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     sec: an init safety param
     
     return:
-<<<<<<< HEAD
     G: sm2 curve
     g: generator
     U: another generator
@@ -159,7 +158,7 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
             for j in i:
                 sm3.update(j.to_bytes())
         digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
         return digest
     
     def hash4(triple_G: Tuple[Tuple[int, int],
@@ -172,10 +171,18 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
                 sm3.update(j.to_bytes())
         sm3.update(Zp.to_bytes())
         digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
+        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
         return digest
     
-    KDF = Sm3() #pylint: disable=e0602
+    def KDF(G: Tuple[int, int]) -> int:
+        sm3 = Sm3() #pylint: disable=e0602
+        for i in G:
+            sm3.update(i.to_bytes())
+        digest = sm3.digest()
+        digest = digest
+        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+        return digest
+        
     
     return G, g, U, hash2, hash3, hash4, KDF
 
@@ -209,8 +216,10 @@ def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     enca = Encapsulate(pk)
     K = enca[0]
     capsule = enca[1]
-    
-    sm4_enc = Sm4Cbc(key, iv, DO_ENCRYPT) #pylint: disable=e0602
+    if len(K) != 16:
+        raise ValueError("invalid key length")
+    iv = b'tpretpretpretpre'
+    sm4_enc = Sm4Cbc(K, iv, DO_ENCRYPT) #pylint: disable=e0602
     plain_Data = m.to_bytes()
     enc_Data = sm4_enc.update(plain_Data)
     enc_Data += sm4_enc.finish()
