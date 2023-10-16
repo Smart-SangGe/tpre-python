@@ -210,7 +210,7 @@ def GenerateKeyPair(
     
     return public_key, secret_key
 
-def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
+def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     Tuple[int, int],Tuple[int, int], int], int]:
     enca = Encapsulate(pk)
     K = enca[0].to_bytes()
@@ -225,9 +225,31 @@ def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     enc_message = (capsule, enc_Data)
     return enc_message
 
+def Decapsulate(ska:int,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+    E,V,s = capsule
+    EVa=multiply(add(E,V), ska)    # (E*V)^ska
+    K = KDF(EVa)
+
+    return K
+
+def Decrypt(sk_A: int,C:Tuple[Tuple[
+    Tuple[int, int],Tuple[int, int], int], int]) ->int:
+    '''
+    params:
+    sk_A: secret key
+    C: (capsule, enc_data) 
+    '''
+    capsule,enc_Data = C
+    K = Decapsulate(sk_A,capsule)
+    iv = b'tpretpretpretpre'
+    sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
+    dec_Data = sm4_dec.update(enc_Data)
+    dec_Data += sm4_dec.finish()
+    return dec_Data
+
 # GenerateRekey
 def H5(id: int, D: int) -> int:
-    sm3 = Sm3() #pylint: ignore=e0602
+    sm3 = Sm3() #pylint: disable=e0602
     sm3.update(id.to_bytes(32))
     sm3.update(D.to_bytes(32))
     hash = sm3.digest()
@@ -263,8 +285,10 @@ G, g, U, hash2, hash3, hash4, KDF = Setup(sec)
 
 def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
     '''
-    param: skA, pkB, N(节点总数), T(阈值)
-    return rki(0 <= i <= N-1)
+    param: 
+    skA, pkB, N(节点总数), T(阈值)
+    return: 
+    rki(0 <= i <= N-1)
     '''
     # 计算临时密钥对(x_A, X_A)
     x_A = random.randint(0, G.P - 1)
@@ -308,3 +332,121 @@ def Encapsulate(pk_A: Tuple[int, int]) -> Tuple[int, Tuple[Tuple[int, int], Tupl
     K = KDF(pk_A_ru)
     capsule = (E, V, s)
     return (K, capsule)
+
+def Checkcapsule(capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> bool:  # 验证胶囊的有效性
+    E,V,s = capsule
+    h2 = hash2((E,V))
+    g = (sm2p256v1.Gx, sm2p256v1.Gy)
+    result1 = multiply(g,s)
+    temp = multiply(E,h2)   # 中间变量
+    result2 =add(V,temp)   #  result2=V*E^H2(E,V)
+    if result1 == result2:
+        flag =True
+    else:
+        flag = False
+        
+    return flag 
+
+
+def ReEncapsulate(kFrag:list,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]] :
+    id,rk,Xa,U1 = kFrag
+    E,V,s = capsule
+    if not Checkcapsule(capsule):
+        raise ValueError('Invalid capsule')
+    flag = Checkcapsule(capsule)
+    assert flag == True    # 断言，判断胶囊capsule的有效性
+    E1 = multiply(E,rk)
+    V1 = multiply(V,rk)
+    cfrag = E1,V1,id,Xa
+    return cfrag   #  cfrag=(E1,V1,id,Xa)   E1= E^rk  V1=V^rk 
+    
+    # 重加密函数
+def ReEncrypt(kFrag:list,
+              C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int])->Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]],int] :
+    capsule,enc_Data = C
+
+    cFrag = ReEncapsulate(kFrag,capsule)
+    return (cFrag,enc_Data)    # 输出密文
+# capsule, enc_Data = C
+
+
+def mergecfrag()->tuple[Tuple[Tuple[int,int],Tuple[int,int]
+                              ,int,Tuple[int,int]], ...]:
+    cfrags = ()
+    kfrags = GenerateReKey(sk_A,pk_B,N,t)
+    result  = Encapsulate(pk_A)
+    K,capsule = result  
+    for kfrag in kfrags:
+        cfrag = ReEncapsulate(kfrag,capsule)
+        cfrags = cfrags + (cfrag,)
+    
+    return cfrags
+
+    
+
+def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
+                  ,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+    '''
+    return:
+    K: sm4 key
+    '''
+    Elist = []
+    Vlist = []
+    idlist = []
+    Xalist = []
+    t = 0
+    for cfrag in cFrags:   # Ei,Vi,id,Xa = cFrag
+        Elist.append(cfrag[0])
+        Vlist.append(cfrag[1])
+        idlist.append(cfrag[2])
+        Xalist.append(cfrag[3])
+        t = t+1        # 总共有t个片段，t为阈值
+  
+    pkab = multiply(pk_A,sk_B)     # pka^b
+    D = H6((pk_A,pk_B,pkab))
+    Sx = []
+    for id in idlist:        #  从1到t
+        sxi = H5(id,D)       #  id 节点的编号
+        Sx.append(sxi)    
+    bis= []    #  b ==> λ
+    j = 1
+    i = 1
+    bi =1
+    for i in range(t):
+        for j in range(t):
+            if j == i:
+                j=j+1
+            else:
+                bi = bi * (Sx[j]//(Sx[j]-Sx[i]))    # 暂定整除
+        bis.append(bi)
+
+    E2=multiply(Elist[0],bis[0])             #  E^  便于计算
+    V2=multiply(Vlist[0],bis[0])             #  V^
+    for k in range(1,t):
+        Ek = multiply(Elist[k],λis[k])     # EK/Vk 是个列表/元组
+        Vk = multiply(Vlist[k],λis[k])
+        E2 = add(Ek,E2)   
+        V2 = add(Vk,V2)
+    Xab = multiply(Xa,b)     # Xa^b
+    d = hash3((Xa,pk_B,Xab))
+    EV = add(E2,V2)    # E2 + V2
+    EVd = multiply(EV,d)     # (E2 + V2)^d
+    K = KDF(EVd)
+
+    return K
+
+#  M = IAEAM(K,enc_Data)
+
+def DecryptFrags(sk_B:int,
+                 pk_A:Tuple[int,int],
+                 cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
+                 C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
+                 )->int:
+    capsule,enc_Data = C   # 加密后的密文
+    K = DecapsulateFrags(sk_B,pk_A,cFrags,capsule)
+    
+    iv = b'tpretpretpretpre'
+    sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
+    dec_Data = sm4_dec.update(enc_Data)
+    dec_Data += sm4_dec.finish()
+    return dec_Data
