@@ -118,21 +118,15 @@ def jacobianMultiply(
     raise ValueError("jacobian Multiply error")
         
 def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
-                             Tuple[int, int], Callable,
-                             Callable, Callable, Callable]:
+                             Tuple[int, int]]:
     '''
     params:
     sec: an init safety param
     
     return:
-<<<<<<< HEAD
     G: sm2 curve
     g: generator
     U: another generator
-    use sm3 as hash function
-    hash2: G^2 -> Zq 
-    hash3: G^3 -> Zq
-    hash4: G^3 * Zq -> Zq
     '''
     
     G = sm2p256v1
@@ -142,50 +136,49 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     tmp_u = random.randint(0, sm2p256v1.P)
     U = multiply(g, tmp_u)
     
-    def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in double_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
-        return digest
-    
-    def hash3(triple_G: Tuple[Tuple[int, int], 
-                              Tuple[int, int],
-                              Tuple[int, int]]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in triple_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
-        return digest
-    
-    def hash4(triple_G: Tuple[Tuple[int, int],
-                              Tuple[int, int],
-                              Tuple[int, int]],
-                Zp: int) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in triple_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        sm3.update(Zp.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
-        return digest
-    
-    # KDF = Sm3() #pylint: disable=e0602
-    def KDF(double_G: Tuple[int, int], num: int) -> int:
-        sm3 = Sm3()
-        for i in double_G:
-            sm3.update(i.to_bytes(32))
-        sm3.update(num.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
-        return digest
-    
-    return G, g, U, hash2, hash3, hash4, KDF
+    return G, g, U
+
+def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in double_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest,'big') % sm2p256v1.P
+    return digest
+
+def hash3(triple_G: Tuple[Tuple[int, int], 
+                            Tuple[int, int],
+                            Tuple[int, int]]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in triple_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
+
+def hash4(triple_G: Tuple[Tuple[int, int],
+                            Tuple[int, int],
+                            Tuple[int, int]],
+            Zp: int) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in triple_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    sm3.update(Zp.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
+
+def KDF(G: Tuple[int, int]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in G:
+        sm3.update(i.to_bytes(32))
+    digest = sm3.digest(32)
+    digest = digest
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
 
 def GenerateKeyPair(
     lamda_parma: int, 
@@ -211,22 +204,46 @@ def GenerateKeyPair(
     
     return public_key, secret_key
 
-def Enc(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
+def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     Tuple[int, int],Tuple[int, int], int], int]:
     enca = Encapsulate(pk)
-    K = enca[0]
+    K = enca[0].to_bytes()
     capsule = enca[1]
-    
-    sm4_enc = Sm4Cbc(key, iv, DO_ENCRYPT) #pylint: disable=e0602
+    if len(K) != 16:
+        raise ValueError("invalid key length")
+    iv = b'tpretpretpretpre'
+    sm4_enc = Sm4Cbc(K, iv, DO_ENCRYPT) #pylint: disable=e0602
     plain_Data = m.to_bytes(32)
     enc_Data = sm4_enc.update(plain_Data)
     enc_Data += sm4_enc.finish()
     enc_message = (capsule, enc_Data)
     return enc_message
 
+def Decapsulate(ska:int,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+    E,V,s = capsule
+    EVa=multiply(add(E,V), ska)    # (E*V)^ska
+    K = KDF(EVa)
+
+    return K
+
+def Decrypt(sk_A: int,C:Tuple[Tuple[
+    Tuple[int, int],Tuple[int, int], int], int]) ->int:
+    '''
+    params:
+    sk_A: secret key
+    C: (capsule, enc_data) 
+    '''
+    capsule,enc_Data = C
+    K = Decapsulate(sk_A,capsule)
+    iv = b'tpretpretpretpre'
+    sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
+    dec_Data = sm4_dec.update(enc_Data)
+    dec_Data += sm4_dec.finish()
+    return dec_Data
+
 # GenerateRekey
 def H5(id: int, D: int) -> int:
-    sm3 = Sm3()
+    sm3 = Sm3() #pylint: disable=e0602
     sm3.update(id.to_bytes(32))
     sm3.update(D.to_bytes(32))
     hash = sm3.digest()
@@ -258,12 +275,14 @@ pk_B, sk_B = GenerateKeyPair(0, ())
 sec = 256  
 
 # 调用Setup函数
-G, g, U, hash2, hash3, hash4, KDF = Setup(sec)
+G, g, U= Setup(sec)
 
 def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
     '''
-    param: skA, pkB, N(节点总数), T(阈值)
-    return rki(0 <= i <= N-1)
+    param: 
+    skA, pkB, N(节点总数), T(阈值)
+    return: 
+    rki(0 <= i <= N-1)
     '''
     # 计算临时密钥对(x_A, X_A)
     x_A = random.randint(0, G.P - 1)
@@ -303,6 +322,126 @@ def Encapsulate(pk_A: Tuple[int, int]) -> Tuple[int, Tuple[Tuple[int, int], Tupl
     E = multiply(g, r)
     V = multiply(g, u)
     s = u + r * hash2((E, V))
-    K = KDF(pk_A, r + u)
+    pk_A_ru = multiply(pk_A, r + u)
+    K = KDF(pk_A_ru)
     capsule = (E, V, s)
     return (K, capsule)
+
+def Checkcapsule(capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> bool:  # 验证胶囊的有效性
+    E,V,s = capsule
+    h2 = hash2((E,V))
+    g = (sm2p256v1.Gx, sm2p256v1.Gy)
+    result1 = multiply(g,s)
+    temp = multiply(E,h2)   # 中间变量
+    result2 =add(V,temp)   #  result2=V*E^H2(E,V)
+    if result1 == result2:
+        flag =True
+    else:
+        flag = False
+        
+    return flag 
+
+
+def ReEncapsulate(kFrag:list,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]] :
+    id,rk,Xa,U1 = kFrag
+    E,V,s = capsule
+    if not Checkcapsule(capsule):
+        raise ValueError('Invalid capsule')
+    flag = Checkcapsule(capsule)
+    assert flag == True    # 断言，判断胶囊capsule的有效性
+    E1 = multiply(E,rk)
+    V1 = multiply(V,rk)
+    cfrag = E1,V1,id,Xa
+    return cfrag   #  cfrag=(E1,V1,id,Xa)   E1= E^rk  V1=V^rk 
+    
+    # 重加密函数
+def ReEncrypt(kFrag:list,
+              C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int])->Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]],int] :
+    capsule,enc_Data = C
+
+    cFrag = ReEncapsulate(kFrag,capsule)
+    return (cFrag,enc_Data)    # 输出密文
+# capsule, enc_Data = C
+
+
+# N 是加密节点的数量，t是阈值
+def mergecfrag(N:int,t:int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
+                              ,int,Tuple[int,int]], ...]:
+    cfrags = ()
+    kfrags = GenerateReKey(sk_A,pk_B,N,t)
+    result  = Encapsulate(pk_A)
+    K,capsule = result  
+    for kfrag in kfrags:
+        cfrag = ReEncapsulate(kfrag,capsule)
+        cfrags = cfrags + (cfrag,)
+    
+    return cfrags
+
+    
+
+def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
+                  ,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+    '''
+    return:
+    K: sm4 key
+    '''
+    Elist = []
+    Vlist = []
+    idlist = []
+    X_Alist = []
+    t = 0
+    for cfrag in cFrags:   # Ei,Vi,id,Xa = cFrag
+        Elist.append(cfrag[0])
+        Vlist.append(cfrag[1])
+        idlist.append(cfrag[2])
+        X_Alist.append(cfrag[3])
+        t = t+1        # 总共有t个片段，t为阈值
+  
+    pkab = multiply(pk_A,sk_B)     # pka^b
+    D = H6((pk_A,pk_B,pkab))
+    Sx = []
+    for id in idlist:        #  从1到t
+        sxi = H5(id,D)       #  id 节点的编号
+        Sx.append(sxi)    
+    bis= []    #  b ==> λ
+    j = 1
+    i = 1
+    bi =1
+    for i in range(t):
+        for j in range(t):
+            if j == i:
+                j=j+1
+            else:
+                bi = bi * (Sx[j]//(Sx[j]-Sx[i]))    # 暂定整除
+        bis.append(bi)
+
+    E2=multiply(Elist[0],bis[0])             #  E^  便于计算
+    V2=multiply(Vlist[0],bis[0])             #  V^
+    for k in range(1,t):
+        Ek = multiply(Elist[k],bis[k])     # EK/Vk 是个列表
+        Vk = multiply(Vlist[k],bis[k])
+        E2 = add(Ek,E2)   
+        V2 = add(Vk,V2)
+    X_Ab = multiply(Xalist[0],b)     # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
+    d = hash3((Xalist[0],pk_B,X_Ab))
+    EV = add(E2,V2)    # E2 + V2
+    EVd = multiply(EV,d)     # (E2 + V2)^d
+    K = KDF(EVd)
+
+    return K
+
+#  M = IAEAM(K,enc_Data)
+
+def DecryptFrags(sk_B:int,
+                 pk_A:Tuple[int,int],
+                 cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
+                 C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
+                 )->int:
+    capsule,enc_Data = C   # 加密后的密文
+    K = DecapsulateFrags(sk_B,pk_A,cFrags,capsule)
+    
+    iv = b'tpretpretpretpre'
+    sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
+    dec_Data = sm4_dec.update(enc_Data)
+    dec_Data += sm4_dec.finish()
+    return dec_Data
