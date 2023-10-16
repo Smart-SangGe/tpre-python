@@ -370,7 +370,8 @@ def ReEncrypt(kFrag:list,
 # capsule, enc_Data = C
 
 
-def mergecfrag()->tuple[Tuple[Tuple[int,int],Tuple[int,int]
+# N 是加密节点的数量，t是阈值
+def mergecfrag(N:int,t:int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
                               ,int,Tuple[int,int]], ...]:
     cfrags = ()
     kfrags = GenerateReKey(sk_A,pk_B,N,t)
@@ -423,8 +424,8 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
     E2=multiply(Elist[0],bis[0])             #  E^  便于计算
     V2=multiply(Vlist[0],bis[0])             #  V^
     for k in range(1,t):
-        Ek = multiply(Elist[k],λis[k])     # EK/Vk 是个列表/元组
-        Vk = multiply(Vlist[k],λis[k])
+        Ek = multiply(Elist[k],bis[k])     # EK/Vk 是个列表
+        Vk = multiply(Vlist[k],bis[k])
         E2 = add(Ek,E2)   
         V2 = add(Vk,V2)
     Xab = multiply(Xa,b)     # Xa^b
