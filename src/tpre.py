@@ -394,13 +394,13 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
     Elist = []
     Vlist = []
     idlist = []
-    Xalist = []
+    X_Alist = []
     t = 0
     for cfrag in cFrags:   # Ei,Vi,id,Xa = cFrag
         Elist.append(cfrag[0])
         Vlist.append(cfrag[1])
         idlist.append(cfrag[2])
-        Xalist.append(cfrag[3])
+        X_Alist.append(cfrag[3])
         t = t+1        # 总共有t个片段，t为阈值
   
     pkab = multiply(pk_A,sk_B)     # pka^b
@@ -428,8 +428,8 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
         Vk = multiply(Vlist[k],bis[k])
         E2 = add(Ek,E2)   
         V2 = add(Vk,V2)
-    Xab = multiply(Xa,b)     # Xa^b
-    d = hash3((Xa,pk_B,Xab))
+    X_Ab = multiply(Xalist[0],b)     # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
+    d = hash3((Xalist[0],pk_B,X_Ab))
     EV = add(E2,V2)    # E2 + V2
     EVd = multiply(EV,d)     # (E2 + V2)^d
     K = KDF(EVd)
