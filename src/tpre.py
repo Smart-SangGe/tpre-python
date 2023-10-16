@@ -118,8 +118,7 @@ def jacobianMultiply(
     raise ValueError("jacobian Multiply error")
         
 def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
-                             Tuple[int, int], Callable,
-                             Callable, Callable, Callable]:
+                             Tuple[int, int]]:
     '''
     params:
     sec: an init safety param
@@ -128,10 +127,6 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     G: sm2 curve
     g: generator
     U: another generator
-    use sm3 as hash function
-    hash2: G^2 -> Zq 
-    hash3: G^3 -> Zq
-    hash4: G^3 * Zq -> Zq
     '''
     
     G = sm2p256v1
@@ -141,50 +136,49 @@ def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int],
     tmp_u = random.randint(0, sm2p256v1.P)
     U = multiply(g, tmp_u)
     
-    def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in double_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
-        return digest
-    
-    def hash3(triple_G: Tuple[Tuple[int, int], 
-                              Tuple[int, int],
-                              Tuple[int, int]]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in triple_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
-        return digest
-    
-    def hash4(triple_G: Tuple[Tuple[int, int],
-                              Tuple[int, int],
-                              Tuple[int, int]],
-                Zp: int) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in triple_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        sm3.update(Zp.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
-        return digest
-    
-    def KDF(G: Tuple[int, int]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in G:
-            sm3.update(i.to_bytes(32))
-        digest = sm3.digest(32)
-        digest = digest
-        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
-        return digest
-        
-    
-    return G, g, U, hash2, hash3, hash4, KDF
+    return G, g, U
+
+def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in double_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest,'big') % sm2p256v1.P
+    return digest
+
+def hash3(triple_G: Tuple[Tuple[int, int], 
+                            Tuple[int, int],
+                            Tuple[int, int]]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in triple_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
+
+def hash4(triple_G: Tuple[Tuple[int, int],
+                            Tuple[int, int],
+                            Tuple[int, int]],
+            Zp: int) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in triple_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    sm3.update(Zp.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
+
+def KDF(G: Tuple[int, int]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in G:
+        sm3.update(i.to_bytes(32))
+    digest = sm3.digest(32)
+    digest = digest
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
 
 def GenerateKeyPair(
     lamda_parma: int, 
@@ -281,7 +275,7 @@ pk_B, sk_B = GenerateKeyPair(0, ())
 sec = 256  
 
 # 调用Setup函数
-G, g, U, hash2, hash3, hash4, KDF = Setup(sec)
+G, g, U= Setup(sec)
 
 def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
     '''
