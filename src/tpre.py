@@ -126,27 +126,6 @@ def jacobianMultiply(
 # 生成元    
 U = multiply(g, random.randint(0, sm2p256v1.P))
 
-# def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
-#                              Tuple[int, int]]:
-#     '''
-#     params:
-#     sec: an init safety param
-    
-#     return:
-#     G: sm2 curve
-#     g: generator
-#     U: another generator
-#     '''
-    
-#     G = sm2p256v1
-    
-#     g = (sm2p256v1.Gx, sm2p256v1.Gy)
-    
-#     tmp_u = random.randint(0, sm2p256v1.P)
-#     U = multiply(g, tmp_u)
-    
-#     return G, g, U
-
 def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     for i in double_G:
