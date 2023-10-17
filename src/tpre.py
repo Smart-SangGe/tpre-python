@@ -2,6 +2,9 @@ from gmssl import * #pylint: disable = e0401
 from typing import Tuple, Callable
 import random
 
+point = Tuple[int, int]
+capsule = Tuple[point, point, int]
+
 # 生成密钥对模块
 class CurveFp:
     def __init__(self, A, B, P, N, Gx, Gy, name):
@@ -29,13 +32,13 @@ G = sm2p256v1
 # 生成元
 g = (sm2p256v1.Gx, sm2p256v1.Gy)
 
-def multiply(a: Tuple[int, int], n: int) -> Tuple[int, int]:
+def multiply(a: point, n: int) -> point:
     N = sm2p256v1.N
     A = sm2p256v1.A
     P = sm2p256v1.P 
     return fromJacobian(jacobianMultiply(toJacobian(a), n, N, A, P), P)
 
-def add(a: Tuple[int, int], b: Tuple[int, int]) -> Tuple[int, int]:
+def add(a: point, b: point) -> point:
     A = sm2p256v1.A
     P = sm2p256v1.P
     return fromJacobian(jacobianAdd(toJacobian(a), toJacobian(b), A, P), P)
@@ -51,11 +54,11 @@ def inv(a: int, n: int) -> int:
         lm, low, hm, high = nm, new, lm, low
     return lm % n
  
-def toJacobian(Xp_Yp: Tuple[int, int]) -> Tuple[int, int, int]:
+def toJacobian(Xp_Yp: point) -> Tuple[int, int, int]:
     Xp, Yp = Xp_Yp
     return (Xp, Yp, 1)
 
-def fromJacobian(Xp_Yp_Zp: Tuple[int, int, int], P: int) -> Tuple[int, int]:
+def fromJacobian(Xp_Yp_Zp: Tuple[int, int, int], P: int) -> point:
     Xp, Yp, Zp = Xp_Yp_Zp
     z = inv(Zp, P)
     return ((Xp * z ** 2) % P, (Yp * z ** 3) % P)
@@ -126,7 +129,7 @@ def jacobianMultiply(
 # 生成元    
 U = multiply(g, random.randint(0, sm2p256v1.P))
 
-def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
+def hash2(double_G: Tuple[point, point]) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     for i in double_G:
         for j in i:
@@ -135,9 +138,9 @@ def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
     digest = int.from_bytes(digest,'big') % sm2p256v1.P
     return digest
 
-def hash3(triple_G: Tuple[Tuple[int, int], 
-                            Tuple[int, int],
-                            Tuple[int, int]]) -> int:
+def hash3(triple_G: Tuple[point, 
+                            point,
+                            point]) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     for i in triple_G:
         for j in i:
@@ -146,9 +149,9 @@ def hash3(triple_G: Tuple[Tuple[int, int],
     digest = int.from_bytes(digest, 'big') % sm2p256v1.P
     return digest
 
-def hash4(triple_G: Tuple[Tuple[int, int],
-                            Tuple[int, int],
-                            Tuple[int, int]],
+def hash4(triple_G: Tuple[point,
+                            point,
+                            point],
             Zp: int) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     for i in triple_G:
@@ -159,7 +162,7 @@ def hash4(triple_G: Tuple[Tuple[int, int],
     digest = int.from_bytes(digest, 'big') % sm2p256v1.P
     return digest
 
-def KDF(G: Tuple[int, int]) -> int:
+def KDF(G: point) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     for i in G:
         sm3.update(i.to_bytes(32))
@@ -171,7 +174,7 @@ def KDF(G: Tuple[int, int]) -> int:
 def GenerateKeyPair(
     lamda_parma: int, 
     public_params: tuple
-    ) -> Tuple[Tuple[int, int], int]:
+    ) -> Tuple[point, int]:
     '''
     params: 
     lamda_param: an init safety param 
@@ -196,8 +199,8 @@ def GenerateKeyPair(
 #pk_A, sk_A = GenerateKeyPair(0, ())
 #pk_B, sk_B = GenerateKeyPair(0, ())
 
-def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
-    Tuple[int, int],Tuple[int, int], int], int]:
+def Encrypt(pk: point, m: int) -> Tuple[Tuple[
+    point,point, int], int]:
     enca = Encapsulate(pk)
     K = enca[0].to_bytes()
     capsule = enca[1]
@@ -211,7 +214,7 @@ def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     enc_message = (capsule, enc_Data)
     return enc_message
 
-def Decapsulate(ska:int,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+def Decapsulate(ska:int,capsule:capsule) -> int:
     E,V,s = capsule
     EVa=multiply(add(E,V), ska)    # (E*V)^ska
     K = KDF(EVa)
@@ -219,7 +222,7 @@ def Decapsulate(ska:int,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int
     return K
 
 def Decrypt(sk_A: int,C:Tuple[Tuple[
-    Tuple[int, int],Tuple[int, int], int], int]) ->int:
+    point, point, int], int]) ->int:
     '''
     params:
     sk_A: secret key
@@ -242,9 +245,9 @@ def hash5(id: int, D: int) -> int:
     hash = int.from_bytes(hash,'big') % G.P
     return hash
 
-def hash6(triple_G: Tuple[Tuple[int, int], 
-                              Tuple[int, int],
-                              Tuple[int, int]]) -> int:
+def hash6(triple_G: Tuple[point, 
+                              point,
+                              point]) -> int:
         sm3 = Sm3() #pylint: disable=e0602
         for i in triple_G:
             for j in i:
@@ -262,7 +265,7 @@ def f(x: int, f_modulus: list, T: int) -> int:
         res += f_modulus[i] * pow(x, i)
     return res
 
-def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
+def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     '''
     param: 
     skA, pkB, N(节点总数), T(阈值)
@@ -301,7 +304,7 @@ def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
 
     return KF
 
-def Encapsulate(pk_A: Tuple[int, int]) -> Tuple[int, Tuple[Tuple[int, int], Tuple[int, int], int]]:
+def Encapsulate(pk_A: point) -> Tuple[int, capsule]:
     r = random.randint(0, G.P - 1)
     u = random.randint(0, G.P - 1)
     E = multiply(g, r)
@@ -312,7 +315,7 @@ def Encapsulate(pk_A: Tuple[int, int]) -> Tuple[int, Tuple[Tuple[int, int], Tupl
     capsule = (E, V, s)
     return (K, capsule)
 
-def Checkcapsule(capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> bool:  # 验证胶囊的有效性
+def Checkcapsule(capsule:capsule) -> bool:  # 验证胶囊的有效性
     E,V,s = capsule
     h2 = hash2((E,V))
     g = (sm2p256v1.Gx, sm2p256v1.Gy)
@@ -326,7 +329,7 @@ def Checkcapsule(capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> bool:  # �
         
     return flag 
 
-def ReEncapsulate(kFrag:list,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]] :
+def ReEncapsulate(kFrag:list,capsule:capsule) -> Tuple[point,point,int,point] :
     id,rk,Xa,U1 = kFrag
     E,V,s = capsule
     if not Checkcapsule(capsule):
@@ -340,7 +343,7 @@ def ReEncapsulate(kFrag:list,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -
     
     # 重加密函数
 def ReEncrypt(kFrag:list,
-              C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int])->Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]],int] :
+              C:Tuple[capsule,int])->Tuple[Tuple[point,point,int,point],int] :
     capsule,enc_Data = C
 
     cFrag = ReEncapsulate(kFrag,capsule)
@@ -349,9 +352,9 @@ def ReEncrypt(kFrag:list,
 
 
 # N 是加密节点的数量，t是阈值
-def mergecfrag(sk_A: int, pk_A: Tuple[int, int], pk_B: Tuple[int, int],
-               N: int, t: int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
-                              ,int,Tuple[int,int]], ...]:
+def mergecfrag(sk_A: int, pk_A: point, pk_B: point,
+               N: int, t: int)->tuple[Tuple[point,point
+                              ,int,point], ...]:
     cfrags = ()
     kfrags = GenerateReKey(sk_A,pk_B,N,t)
     result  = Encapsulate(pk_A)
@@ -365,9 +368,9 @@ def mergecfrag(sk_A: int, pk_A: Tuple[int, int], pk_B: Tuple[int, int],
     
 
 def DecapsulateFrags(sk_B:int, 
-                     pk_B: Tuple[int, int], 
-                     pk_A:Tuple[int,int],
-                     cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
+                     pk_B: point, 
+                     pk_A:point,
+                     cFrags:Tuple[Tuple[point,point,int,point]]
                     ) -> int:
     '''
     return:
@@ -421,10 +424,10 @@ def DecapsulateFrags(sk_B:int,
 #  M = IAEAM(K,enc_Data)
 
 def DecryptFrags(sk_B: int,
-                 pk_B: Tuple[int, int],
-                 pk_A: Tuple[int,int],
-                 cFrags: Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
-                 C: Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
+                 pk_B: point,
+                 pk_A: point,
+                 cFrags: Tuple[Tuple[point,point,int,point]],
+                 C: Tuple[capsule,int]
                  ) -> int:
     capsule,enc_Data = C   # 加密后的密文
     K = DecapsulateFrags(sk_B, pk_B, pk_A,cFrags)
