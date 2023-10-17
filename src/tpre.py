@@ -22,7 +22,13 @@ sm2p256v1 = CurveFp(
     Gx=0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7,
     Gy=0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
 )
- 
+
+# 椭圆曲线
+G = sm2p256v1
+
+# 生成元
+g = (sm2p256v1.Gx, sm2p256v1.Gy)
+
 def multiply(a: Tuple[int, int], n: int) -> Tuple[int, int]:
     N = sm2p256v1.N
     A = sm2p256v1.A
@@ -116,75 +122,72 @@ def jacobianMultiply(
     if (n % 2) == 1:
         return jacobianAdd(jacobianDouble(jacobianMultiply((Xp, Yp, Zp), n // 2, N, A, P), A, P), (Xp, Yp, Zp), A, P)
     raise ValueError("jacobian Multiply error")
-        
-def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
-                             Tuple[int, int], Callable,
-                             Callable, Callable, Callable]:
-    '''
-    params:
-    sec: an init safety param
+
+# 生成元    
+U = multiply(g, random.randint(0, sm2p256v1.P))
+
+# def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
+#                              Tuple[int, int]]:
+#     '''
+#     params:
+#     sec: an init safety param
     
-    return:
-    G: sm2 curve
-    g: generator
-    U: another generator
-    use sm3 as hash function
-    hash2: G^2 -> Zq 
-    hash3: G^3 -> Zq
-    hash4: G^3 * Zq -> Zq
-    '''
+#     return:
+#     G: sm2 curve
+#     g: generator
+#     U: another generator
+#     '''
     
-    G = sm2p256v1
+#     G = sm2p256v1
     
-    g = (sm2p256v1.Gx, sm2p256v1.Gy)
+#     g = (sm2p256v1.Gx, sm2p256v1.Gy)
     
-    tmp_u = random.randint(0, sm2p256v1.P)
-    U = multiply(g, tmp_u)
+#     tmp_u = random.randint(0, sm2p256v1.P)
+#     U = multiply(g, tmp_u)
     
-    def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in double_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest,'big') % sm2p256v1.P
-        return digest
-    
-    def hash3(triple_G: Tuple[Tuple[int, int], 
-                              Tuple[int, int],
-                              Tuple[int, int]]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in triple_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
-        return digest
-    
-    def hash4(triple_G: Tuple[Tuple[int, int],
-                              Tuple[int, int],
-                              Tuple[int, int]],
-                Zp: int) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in triple_G:
-            for j in i:
-                sm3.update(j.to_bytes(32))
-        sm3.update(Zp.to_bytes(32))
-        digest = sm3.digest()
-        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
-        return digest
-    
-    def KDF(G: Tuple[int, int]) -> int:
-        sm3 = Sm3() #pylint: disable=e0602
-        for i in G:
-            sm3.update(i.to_bytes(32))
-        digest = sm3.digest(32)
-        digest = digest
-        digest = int.from_bytes(digest, 'big') % sm2p256v1.P
-        return digest
-        
-    
-    return G, g, U, hash2, hash3, hash4, KDF
+#     return G, g, U
+
+def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in double_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest,'big') % sm2p256v1.P
+    return digest
+
+def hash3(triple_G: Tuple[Tuple[int, int], 
+                            Tuple[int, int],
+                            Tuple[int, int]]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in triple_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
+
+def hash4(triple_G: Tuple[Tuple[int, int],
+                            Tuple[int, int],
+                            Tuple[int, int]],
+            Zp: int) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in triple_G:
+        for j in i:
+            sm3.update(j.to_bytes(32))
+    sm3.update(Zp.to_bytes(32))
+    digest = sm3.digest()
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
+
+def KDF(G: Tuple[int, int]) -> int:
+    sm3 = Sm3() #pylint: disable=e0602
+    for i in G:
+        sm3.update(i.to_bytes(32))
+    digest = sm3.digest(32)
+    digest = digest
+    digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    return digest
 
 def GenerateKeyPair(
     lamda_parma: int, 
@@ -209,6 +212,10 @@ def GenerateKeyPair(
     secret_key = int.from_bytes(bytes(sm2.private_key),"big")
     
     return public_key, secret_key
+
+# 生成A和B的公钥和私钥
+pk_A, sk_A = GenerateKeyPair(0, ())
+pk_B, sk_B = GenerateKeyPair(0, ())
 
 def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     Tuple[int, int],Tuple[int, int], int], int]:
@@ -273,16 +280,6 @@ def f(x: int, f_modulus: list, T: int) -> int:
         res += f_modulus[i] * pow(x, i)
     return res
 
-# 生成A和B的公钥和私钥
-pk_A, sk_A = GenerateKeyPair(0, ())
-pk_B, sk_B = GenerateKeyPair(0, ())
-
-# sec需要重新设置
-sec = 256  
-
-# 调用Setup函数
-G, g, U, hash2, hash3, hash4, KDF = Setup(sec)
-
 def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
     '''
     param: 
@@ -346,7 +343,6 @@ def Checkcapsule(capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> bool:  # �
         flag = False
         
     return flag 
-
 
 def ReEncapsulate(kFrag:list,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]] :
     id,rk,Xa,U1 = kFrag
