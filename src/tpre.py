@@ -193,8 +193,8 @@ def GenerateKeyPair(
     return public_key, secret_key
 
 # 生成A和B的公钥和私钥
-pk_A, sk_A = GenerateKeyPair(0, ())
-pk_B, sk_B = GenerateKeyPair(0, ())
+#pk_A, sk_A = GenerateKeyPair(0, ())
+#pk_B, sk_B = GenerateKeyPair(0, ())
 
 def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     Tuple[int, int],Tuple[int, int], int], int]:
@@ -254,6 +254,9 @@ def hash6(triple_G: Tuple[Tuple[int, int],
         return hash
 
 def f(x: int, f_modulus: list, T: int) -> int:
+    '''
+    
+    '''
     res = 0
     for i in range(T):
         res += f_modulus[i] * pow(x, i)
@@ -346,7 +349,8 @@ def ReEncrypt(kFrag:list,
 
 
 # N 是加密节点的数量，t是阈值
-def mergecfrag(N:int,t:int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
+def mergecfrag(sk_A: int, pk_A: Tuple[int, int], pk_B: Tuple[int, int],
+               N: int, t: int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
                               ,int,Tuple[int,int]], ...]:
     cfrags = ()
     kfrags = GenerateReKey(sk_A,pk_B,N,t)
@@ -360,8 +364,11 @@ def mergecfrag(N:int,t:int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
 
     
 
-def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
-                  ,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+def DecapsulateFrags(sk_B:int, 
+                     pk_B: Tuple[int, int], 
+                     pk_A:Tuple[int,int],
+                     cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
+                    ) -> int:
     '''
     return:
     K: sm4 key
@@ -413,13 +420,14 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
 
 #  M = IAEAM(K,enc_Data)
 
-def DecryptFrags(sk_B:int,
-                 pk_A:Tuple[int,int],
-                 cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
-                 C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
-                 )->int:
+def DecryptFrags(sk_B: int,
+                 pk_B: Tuple[int, int],
+                 pk_A: Tuple[int,int],
+                 cFrags: Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
+                 C: Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
+                 ) -> int:
     capsule,enc_Data = C   # 加密后的密文
-    K = DecapsulateFrags(sk_B,pk_A,cFrags,capsule)
+    K = DecapsulateFrags(sk_B, pk_B, pk_A,cFrags)
     
     iv = b'tpretpretpretpre'
     sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
