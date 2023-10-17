@@ -344,7 +344,6 @@ def Checkcapsule(capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> bool:  # é
         
     return flag 
 
-
 def ReEncapsulate(kFrag:list,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]] :
     id,rk,Xa,U1 = kFrag
     E,V,s = capsule
