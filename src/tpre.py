@@ -234,7 +234,7 @@ def Decrypt(sk_A: int,C:Tuple[Tuple[
     return dec_Data
 
 # GenerateRekey
-def H5(id: int, D: int) -> int:
+def hash5(id: int, D: int) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     sm3.update(id.to_bytes(32))
     sm3.update(D.to_bytes(32))
@@ -242,7 +242,7 @@ def H5(id: int, D: int) -> int:
     hash = int.from_bytes(hash,'big') % G.P
     return hash
 
-def H6(triple_G: Tuple[Tuple[int, int], 
+def hash6(triple_G: Tuple[Tuple[int, int], 
                               Tuple[int, int],
                               Tuple[int, int]]) -> int:
         sm3 = Sm3() #pylint: disable=e0602
@@ -283,14 +283,14 @@ def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
         f_modulus.append(random.randint(0, G.P - 1))
 
     # 计算D
-    D = H6((X_A, pk_B, multiply(pk_B, sk_A)))
+    D = hash6((X_A, pk_B, multiply(pk_B, sk_A)))
 
     # 计算KF
     KF = []
     for i in range(N):
         y = random.randint(0, G.P - 1)
         Y = multiply(g, y)
-        s_x = H5(i, D)         # id需要设置
+        s_x = hash5(i, D)         # id需要设置
         r_k = f(s_x, f_modulus, T)
         U1 = multiply(U, r_k)   
         kFrag = (i, r_k, X_A, U1)
@@ -379,10 +379,10 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
         t = t+1        # 总共有t个片段，t为阈值
   
     pkab = multiply(pk_A,sk_B)     # pka^b
-    D = H6((pk_A,pk_B,pkab))
+    D = hash6((pk_A,pk_B,pkab))
     Sx = []
     for id in idlist:        #  从1到t
-        sxi = H5(id,D)       #  id 节点的编号
+        sxi = hash5(id,D)       #  id 节点的编号
         Sx.append(sxi)    
     bis= []    #  b ==> λ
     j = 1
