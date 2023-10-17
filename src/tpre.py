@@ -126,27 +126,6 @@ def jacobianMultiply(
 # 生成元    
 U = multiply(g, random.randint(0, sm2p256v1.P))
 
-# def Setup(sec: int) -> Tuple[CurveFp, Tuple[int, int], 
-#                              Tuple[int, int]]:
-#     '''
-#     params:
-#     sec: an init safety param
-    
-#     return:
-#     G: sm2 curve
-#     g: generator
-#     U: another generator
-#     '''
-    
-#     G = sm2p256v1
-    
-#     g = (sm2p256v1.Gx, sm2p256v1.Gy)
-    
-#     tmp_u = random.randint(0, sm2p256v1.P)
-#     U = multiply(g, tmp_u)
-    
-#     return G, g, U
-
 def hash2(double_G: Tuple[Tuple[int, int], Tuple[int, int]]) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     for i in double_G:
@@ -214,8 +193,8 @@ def GenerateKeyPair(
     return public_key, secret_key
 
 # 生成A和B的公钥和私钥
-pk_A, sk_A = GenerateKeyPair(0, ())
-pk_B, sk_B = GenerateKeyPair(0, ())
+#pk_A, sk_A = GenerateKeyPair(0, ())
+#pk_B, sk_B = GenerateKeyPair(0, ())
 
 def Encrypt(pk: Tuple[int, int], m: int) -> Tuple[Tuple[
     Tuple[int, int],Tuple[int, int], int], int]:
@@ -255,7 +234,7 @@ def Decrypt(sk_A: int,C:Tuple[Tuple[
     return dec_Data
 
 # GenerateRekey
-def H5(id: int, D: int) -> int:
+def hash5(id: int, D: int) -> int:
     sm3 = Sm3() #pylint: disable=e0602
     sm3.update(id.to_bytes(32))
     sm3.update(D.to_bytes(32))
@@ -263,7 +242,7 @@ def H5(id: int, D: int) -> int:
     hash = int.from_bytes(hash,'big') % G.P
     return hash
 
-def H6(triple_G: Tuple[Tuple[int, int], 
+def hash6(triple_G: Tuple[Tuple[int, int], 
                               Tuple[int, int],
                               Tuple[int, int]]) -> int:
         sm3 = Sm3() #pylint: disable=e0602
@@ -275,6 +254,9 @@ def H6(triple_G: Tuple[Tuple[int, int],
         return hash
 
 def f(x: int, f_modulus: list, T: int) -> int:
+    '''
+    
+    '''
     res = 0
     for i in range(T):
         res += f_modulus[i] * pow(x, i)
@@ -304,14 +286,14 @@ def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
         f_modulus.append(random.randint(0, G.P - 1))
 
     # 计算D
-    D = H6((X_A, pk_B, multiply(pk_B, sk_A)))
+    D = hash6((X_A, pk_B, multiply(pk_B, sk_A)))
 
     # 计算KF
     KF = []
     for i in range(N):
         y = random.randint(0, G.P - 1)
         Y = multiply(g, y)
-        s_x = H5(i, D)         # id需要设置
+        s_x = hash5(i, D)         # id需要设置
         r_k = f(s_x, f_modulus, T)
         U1 = multiply(U, r_k)   
         kFrag = (i, r_k, X_A, U1)
@@ -367,7 +349,8 @@ def ReEncrypt(kFrag:list,
 
 
 # N 是加密节点的数量，t是阈值
-def mergecfrag(N:int,t:int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
+def mergecfrag(sk_A: int, pk_A: Tuple[int, int], pk_B: Tuple[int, int],
+               N: int, t: int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
                               ,int,Tuple[int,int]], ...]:
     cfrags = ()
     kfrags = GenerateReKey(sk_A,pk_B,N,t)
@@ -381,8 +364,11 @@ def mergecfrag(N:int,t:int)->tuple[Tuple[Tuple[int,int],Tuple[int,int]
 
     
 
-def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
-                  ,capsule:Tuple[Tuple[int,int],Tuple[int,int],int]) -> int:
+def DecapsulateFrags(sk_B:int, 
+                     pk_B: Tuple[int, int], 
+                     pk_A:Tuple[int,int],
+                     cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]]
+                    ) -> int:
     '''
     return:
     K: sm4 key
@@ -400,10 +386,10 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
         t = t+1        # 总共有t个片段，t为阈值
   
     pkab = multiply(pk_A,sk_B)     # pka^b
-    D = H6((pk_A,pk_B,pkab))
+    D = hash6((pk_A,pk_B,pkab))
     Sx = []
     for id in idlist:        #  从1到t
-        sxi = H5(id,D)       #  id 节点的编号
+        sxi = hash5(id,D)       #  id 节点的编号
         Sx.append(sxi)    
     bis= []    #  b ==> λ
     j = 1
@@ -424,8 +410,8 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
         Vk = multiply(Vlist[k],bis[k])
         E2 = add(Ek,E2)   
         V2 = add(Vk,V2)
-    X_Ab = multiply(Xalist[0],b)     # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
-    d = hash3((Xalist[0],pk_B,X_Ab))
+    X_Ab = multiply(X_Alist[0],sk_B)     # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
+    d = hash3((X_Alist[0],pk_B,X_Ab))
     EV = add(E2,V2)    # E2 + V2
     EVd = multiply(EV,d)     # (E2 + V2)^d
     K = KDF(EVd)
@@ -434,13 +420,14 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
 
 #  M = IAEAM(K,enc_Data)
 
-def DecryptFrags(sk_B:int,
-                 pk_A:Tuple[int,int],
-                 cFrags:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
-                 C:Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
-                 )->int:
+def DecryptFrags(sk_B: int,
+                 pk_B: Tuple[int, int],
+                 pk_A: Tuple[int,int],
+                 cFrags: Tuple[Tuple[Tuple[int,int],Tuple[int,int],int,Tuple[int,int]]],
+                 C: Tuple[Tuple[Tuple[int,int],Tuple[int,int],int],int]
+                 ) -> int:
     capsule,enc_Data = C   # 加密后的密文
-    K = DecapsulateFrags(sk_B,pk_A,cFrags,capsule)
+    K = DecapsulateFrags(sk_B, pk_B, pk_A,cFrags)
     
     iv = b'tpretpretpretpre'
     sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
