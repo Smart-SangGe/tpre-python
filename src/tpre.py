@@ -403,8 +403,8 @@ def DecapsulateFrags(sk_B:int,pk_A:Tuple[int,int],cFrags:Tuple[Tuple[Tuple[int,i
         Vk = multiply(Vlist[k],bis[k])
         E2 = add(Ek,E2)   
         V2 = add(Vk,V2)
-    X_Ab = multiply(Xalist[0],b)     # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
-    d = hash3((Xalist[0],pk_B,X_Ab))
+    X_Ab = multiply(X_Alist[0],sk_B)     # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
+    d = hash3((X_Alist[0],pk_B,X_Ab))
     EV = add(E2,V2)    # E2 + V2
     EVd = multiply(EV,d)     # (E2 + V2)^d
     K = KDF(EVd)
