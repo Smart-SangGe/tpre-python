@@ -275,9 +275,18 @@ def H6(triple_G: Tuple[Tuple[int, int],
         return hash
 
 def f(x: int, f_modulus: list, T: int) -> int:
+    '''
+    功能: 通过多项式插值来实现信息的分散和重构
+    例如: 随机生成一个多项式f(x)=4x+5,质数P=11,其中f(0)=5,将多项式的系数分别分配给两个人,例如第一个人得到(1, 9),第二个人得到(2, 2).如果两个人都收集到了这两个点,那么可以使用拉格朗日插值法恢复原始的多项式,进而得到秘密信息"5"
+    param:
+    x, f_modulus(多项式系数列表), T(门限)
+    return:
+    res
+    '''
     res = 0
     for i in range(T):
         res += f_modulus[i] * pow(x, i)
+    res = res % sm2p256v1.P
     return res
 
 def GenerateReKey(sk_A, pk_B, N: int, T: int) -> list:
@@ -325,6 +334,7 @@ def Encapsulate(pk_A: Tuple[int, int]) -> Tuple[int, Tuple[Tuple[int, int], Tupl
     E = multiply(g, r)
     V = multiply(g, u)
     s = u + r * hash2((E, V))
+    s = s % sm2p256v1.P
     pk_A_ru = multiply(pk_A, r + u)
     K = KDF(pk_A_ru)
     capsule = (E, V, s)
