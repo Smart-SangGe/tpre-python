@@ -323,7 +323,7 @@ def Encapsulate(pk_A: point) -> Tuple[int, capsule]:
     u = random.randint(0, G.P - 1)
     E = multiply(g, r)
     V = multiply(g, u)
-    s = u + r * hash2((E, V))
+    s = u + r * hash2((E, V)) 
     pk_A_ru = multiply(pk_A, r + u)
     K = KDF(pk_A_ru)
     capsule = (E, V, s)
@@ -408,8 +408,6 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
         sxi = hash5(id, D)  #  id 节点的编号
         Sx.append(sxi)
     bis = []  #  b ==> λ
-    j = 1
-    i = 1
     bi = 1
     for i in range(len(cFrags)):
         for j in range(len(cFrags)):
