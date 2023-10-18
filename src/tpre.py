@@ -174,16 +174,12 @@ def hash4(triple_G: Tuple[point, point, point], Zp: int) -> int:
 
 def KDF(G: point) -> int:
     sm3 = Sm3()  # pylint: disable=e0602
-    print(G)
     for i in G:
         sm3.update(i.to_bytes(32))
     digest = sm3.digest()
-    digest = digest
     digest = int.from_bytes(digest, "big") % sm2p256v1.P
     mask_128bit = (1 << 128) - 1
     digest = digest & mask_128bit
-    print("key =", digest)
-    traceback.print_stack()
     return digest
 
 
@@ -208,10 +204,6 @@ def GenerateKeyPair(lamda_parma: int, public_params: tuple) -> Tuple[point, int]
     return public_key, secret_key
 
 
-# 生成A和B的公钥和私钥
-# pk_A, sk_A = GenerateKeyPair(0, ())
-# pk_B, sk_B = GenerateKeyPair(0, ())
-
 
 def Encrypt(pk: point, m: bytes) -> Tuple[capsule, bytes]:
     enca = Encapsulate(pk)
@@ -235,7 +227,7 @@ def Decapsulate(ska: int, capsule: capsule) -> int:
     return K
 
 
-def Decrypt(sk_A: int, C: Tuple[Tuple[point, point, int], bytes]) -> int:
+def Decrypt(sk_A: int, C: Tuple[capsule, bytes]) -> bytes:
     """
     params:
     sk_A: secret key
@@ -296,9 +288,11 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     # 计算临时密钥对(x_A, X_A)
     x_A = random.randint(0, G.P - 1)
     X_A = multiply(g, x_A)
+    
+    pk_A = multiply(g, sk_A)
 
     # d是Bob的密钥对与临时密钥对的非交互式Diffie-Hellman密钥交换的结果
-    d = hash3((X_A, pk_B, multiply(pk_B, x_A)))
+    d = hash3((pk_A, pk_B, multiply(pk_B, x_A)))
 
     # 计算多项式系数, 确定代理节点的ID(一个点)
     f_modulus = []
@@ -332,7 +326,7 @@ def Encapsulate(pk_A: point) -> Tuple[int, capsule]:
     E = multiply(g, r)
     V = multiply(g, u)
     s = u + r * hash2((E, V))
-    s = s % sm2p256v1.P
+    #s = s % sm2p256v1.P
     pk_A_ru = multiply(pk_A, r + u)
     K = KDF(pk_A_ru)
     capsule = (E, V, s)
@@ -359,8 +353,6 @@ def ReEncapsulate(kFrag: list, capsule: capsule) -> Tuple[point, point, int, poi
     E, V, s = capsule
     if not Checkcapsule(capsule):
         raise ValueError("Invalid capsule")
-    flag = Checkcapsule(capsule)
-    assert flag == True  # 断言,判断胶囊capsule的有效性
     E1 = multiply(E, rk)
     V1 = multiply(V, rk)
     cfrag = E1, V1, id, Xa
