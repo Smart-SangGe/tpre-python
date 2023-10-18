@@ -164,11 +164,15 @@ def hash4(triple_G: Tuple[point,
 
 def KDF(G: point) -> int:
     sm3 = Sm3() #pylint: disable=e0602
+    print(G)
     for i in G:
         sm3.update(i.to_bytes(32))
-    digest = sm3.digest(32)
+    digest = sm3.digest()
     digest = digest
     digest = int.from_bytes(digest, 'big') % sm2p256v1.P
+    mask_128bit = (1 << 128) - 1
+    digest = digest & mask_128bit
+    print('key =',digest)
     return digest
 
 def GenerateKeyPair(
@@ -199,17 +203,16 @@ def GenerateKeyPair(
 #pk_A, sk_A = GenerateKeyPair(0, ())
 #pk_B, sk_B = GenerateKeyPair(0, ())
 
-def Encrypt(pk: point, m: int) -> Tuple[Tuple[
-    point,point, int], int]:
+def Encrypt(pk: point, m: bytes) -> Tuple[Tuple[
+    point,point, int], bytes]:
     enca = Encapsulate(pk)
-    K = enca[0].to_bytes()
+    K = enca[0].to_bytes(16)
     capsule = enca[1]
     if len(K) != 16:
         raise ValueError("invalid key length")
     iv = b'tpretpretpretpre'
     sm4_enc = Sm4Cbc(K, iv, DO_ENCRYPT) #pylint: disable=e0602
-    plain_Data = m.to_bytes(32)
-    enc_Data = sm4_enc.update(plain_Data)
+    enc_Data = sm4_enc.update(m)
     enc_Data += sm4_enc.finish()
     enc_message = (capsule, enc_Data)
     return enc_message
@@ -222,7 +225,7 @@ def Decapsulate(ska:int,capsule:capsule) -> int:
     return K
 
 def Decrypt(sk_A: int,C:Tuple[Tuple[
-    point, point, int], int]) ->int:
+    point, point, int], bytes]) ->int:
     '''
     params:
     sk_A: secret key
@@ -358,7 +361,7 @@ def mergecfrag(cfrag_cts:list)->list:
     cfrags = []
     for cfrag_ct in cfrag_cts:
         cfrags_list.append(cfrag_ct[0])
-        cfrags_list.append(cfrag_ct[1])
+        ct_list.append(cfrag_ct[1])
     cfrags.append(cfrags_list)
     cfrags.append(ct_list[0])
     return cfrags
@@ -427,12 +430,17 @@ def DecryptFrags(sk_B: int,
                  pk_B: point,
                  pk_A: point,
                  cfrags:list
-                 ) -> int:
+                 ) -> bytes:
     capsules,enc_Data = cfrags   # 加密后的密文
     K = DecapsulateFrags(sk_B, pk_B, pk_A, capsules)
-    
+    K = K.to_bytes(16)
     iv = b'tpretpretpretpre'
     sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
-    dec_Data = sm4_dec.update(enc_Data)
-    dec_Data += sm4_dec.finish()
+    try:
+        dec_Data = sm4_dec.update(enc_Data)
+        dec_Data += sm4_dec.finish()
+    except Exception as e:
+        print(e)
+        print("key error")
+        dec_Data = b''
     return dec_Data
