@@ -351,18 +351,16 @@ def ReEncrypt(kFrag:list,
 # capsule, enc_Data = C
 
 
-# N 是加密节点的数量，t是阈值
-def mergecfrag(sk_A: int, pk_A: point, pk_B: point,
-               N: int, t: int)->tuple[Tuple[point,point
-                              ,int,point], ...]:
-    cfrags = ()
-    kfrags = GenerateReKey(sk_A,pk_B,N,t)
-    result  = Encapsulate(pk_A)
-    K,capsule = result  
-    for kfrag in kfrags:
-        cfrag = ReEncapsulate(kfrag,capsule)
-        cfrags = cfrags + (cfrag,)
-    
+# 将加密节点加密后产生的t个（capsule,ct）合并在一起，产生cfrags = {{capsule1,capsule2,...},ct}
+def mergecfrag(cfrag_cts:list)->list:
+    ct_list = []
+    cfrags_list = []
+    cfrags = []
+    for cfrag_ct in cfrag_cts:
+        cfrags_list.append(cfrag_ct[0])
+        cfrags_list.append(cfrag_ct[1])
+    cfrags.append(cfrags_list)
+    cfrags.append(ct_list[0])
     return cfrags
 
     
@@ -370,12 +368,13 @@ def mergecfrag(sk_A: int, pk_A: point, pk_B: point,
 def DecapsulateFrags(sk_B:int, 
                      pk_B: point, 
                      pk_A:point,
-                     cFrags:Tuple[Tuple[point,point,int,point]]
+                     cFrags:list
                     ) -> int:
     '''
     return:
     K: sm4 key
     '''
+
     Elist = []
     Vlist = []
     idlist = []
@@ -423,14 +422,14 @@ def DecapsulateFrags(sk_B:int,
 
 #  M = IAEAM(K,enc_Data)
 
+# cfrags = {{capsule1,capsule2,...},ct} ,ct->en_Data
 def DecryptFrags(sk_B: int,
                  pk_B: point,
                  pk_A: point,
-                 cFrags: Tuple[Tuple[point,point,int,point]],
-                 C: Tuple[capsule,int]
+                 cfrags:list
                  ) -> int:
-    capsule,enc_Data = C   # 加密后的密文
-    K = DecapsulateFrags(sk_B, pk_B, pk_A,cFrags)
+    capsules,enc_Data = cfrags   # 加密后的密文
+    K = DecapsulateFrags(sk_B, pk_B, pk_A, capsules)
     
     iv = b'tpretpretpretpre'
     sm4_dec = Sm4Cbc(K, iv, DO_DECRYPT) #pylint: disable= e0602
