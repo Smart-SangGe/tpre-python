@@ -213,7 +213,7 @@ def GenerateKeyPair(lamda_parma: int, public_params: tuple) -> Tuple[point, int]
 # pk_B, sk_B = GenerateKeyPair(0, ())
 
 
-def Encrypt(pk: point, m: bytes) -> Tuple[Tuple[point, point, int], bytes]:
+def Encrypt(pk: point, m: bytes) -> Tuple[capsule, bytes]:
     enca = Encapsulate(pk)
     K = enca[0].to_bytes(16)
     capsule = enca[1]
@@ -361,8 +361,8 @@ def ReEncapsulate(kFrag: list, capsule: capsule) -> Tuple[point, point, int, poi
 
 
 def ReEncrypt(
-    kFrag: list, C: Tuple[capsule, int]
-) -> Tuple[Tuple[point, point, int, point], int]:
+    kFrag: list, C: Tuple[capsule, bytes]
+) -> Tuple[Tuple[point, point, int, point], bytes]:
     capsule, enc_Data = C
 
     cFrag = ReEncapsulate(kFrag, capsule)
@@ -395,13 +395,11 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
     Vlist = []
     idlist = []
     X_Alist = []
-    t = 0
     for cfrag in cFrags:  # Ei,Vi,id,Xa = cFrag
         Elist.append(cfrag[0])
         Vlist.append(cfrag[1])
         idlist.append(cfrag[2])
         X_Alist.append(cfrag[3])
-        t = t + 1  # 总共有t个片段,t为阈值
 
     pkab = multiply(pk_A, sk_B)  # pka^b
     D = hash6((pk_A, pk_B, pkab))
@@ -413,18 +411,18 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
     j = 1
     i = 1
     bi = 1
-    for i in range(t):
-        for j in range(t):
-            if j == i:
-                # j=j+1
-                continue
-            else:
-                bi = bi * (Sx[j] // (Sx[j] - Sx[i]))  # 暂定整除
+    for i in range(len(cFrags)):
+        for j in range(len(cFrags)):
+            if j != i:
+                # bi = bi * (Sx[j] // (Sx[j] - Sx[i]))  # 暂定整除
+                Sxj_sub_Sxi = (Sx[j] - Sx[i]) % sm2p256v1.P
+                Sxj_sub_Sxi_inv = inv(Sxj_sub_Sxi, sm2p256v1.P)
+                bi = (bi * Sx[j] * Sxj_sub_Sxi_inv) % sm2p256v1.P
         bis.append(bi)
 
     E2 = multiply(Elist[0], bis[0])  #  E^  便于计算
     V2 = multiply(Vlist[0], bis[0])  #  V^
-    for k in range(1, t):
+    for k in range(1, len(cFrags)):
         Ek = multiply(Elist[k], bis[k])  # EK/Vk 是个列表
         Vk = multiply(Vlist[k], bis[k])
         E2 = add(Ek, E2)
