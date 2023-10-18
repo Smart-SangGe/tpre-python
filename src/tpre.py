@@ -1,6 +1,7 @@
 from gmssl import * #pylint: disable = e0401 
 from typing import Tuple, Callable
 import random
+import traceback
 
 point = Tuple[int, int]
 capsule = Tuple[point, point, int]
@@ -173,6 +174,7 @@ def KDF(G: point) -> int:
     mask_128bit = (1 << 128) - 1
     digest = digest & mask_128bit
     print('key =',digest)
+    traceback.print_stack()
     return digest
 
 def GenerateKeyPair(
@@ -403,7 +405,8 @@ def DecapsulateFrags(sk_B:int,
     for i in range(t):
         for j in range(t):
             if j == i:
-                j=j+1
+                # j=j+1
+                continue
             else:
                 bi = bi * (Sx[j]//(Sx[j]-Sx[i]))    # 暂定整除
         bis.append(bi)
