@@ -351,7 +351,7 @@ def ReEncapsulate(kFrag: list, capsule: capsule) -> Tuple[point, point, int, poi
     if not Checkcapsule(capsule):
         raise ValueError("Invalid capsule")
     flag = Checkcapsule(capsule)
-    assert flag == True  # 断言，判断胶囊capsule的有效性
+    assert flag == True  # 断言,判断胶囊capsule的有效性
     E1 = multiply(E, rk)
     V1 = multiply(V, rk)
     cfrag = E1, V1, id, Xa
@@ -372,7 +372,7 @@ def ReEncrypt(
 # capsule, enc_Data = C
 
 
-# 将加密节点加密后产生的t个（capsule,ct）合并在一起，产生cfrags = {{capsule1,capsule2,...},ct}
+# 将加密节点加密后产生的t个（capsule,ct）合并在一起,产生cfrags = {{capsule1,capsule2,...},ct}
 def mergecfrag(cfrag_cts: list) -> list:
     ct_list = []
     cfrags_list = []
@@ -401,7 +401,7 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
         Vlist.append(cfrag[1])
         idlist.append(cfrag[2])
         X_Alist.append(cfrag[3])
-        t = t + 1  # 总共有t个片段，t为阈值
+        t = t + 1  # 总共有t个片段,t为阈值
 
     pkab = multiply(pk_A, sk_B)  # pka^b
     D = hash6((pk_A, pk_B, pkab))
@@ -429,7 +429,7 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
         Vk = multiply(Vlist[k], bis[k])
         E2 = add(Ek, E2)
         V2 = add(Vk, V2)
-    X_Ab = multiply(X_Alist[0], sk_B)  # X_A^b   X_A 的值是随机生成的xa，通过椭圆曲线上的倍点运算生成的固定的值
+    X_Ab = multiply(X_Alist[0], sk_B)  # X_A^b   X_A 的值是随机生成的xa,通过椭圆曲线上的倍点运算生成的固定的值
     d = hash3((X_Alist[0], pk_B, X_Ab))
     EV = add(E2, V2)  # E2 + V2
     EVd = multiply(EV, d)  # (E2 + V2)^d
