@@ -417,8 +417,6 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
         sxi = hash5(id, D)  #  id 节点的编号
         Sx.append(sxi)
     bis = []  #  b ==> λ
-    j = 1
-    i = 1
     bi = 1
     for i in range(len(cFrags)):
         for j in range(len(cFrags)):
