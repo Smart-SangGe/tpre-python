@@ -138,7 +138,7 @@ def jacobianMultiply(
 
 
 # 生成元
-U = multiply(g, random.randint(0, sm2p256v1.P))
+U = multiply(g, random.randint(0, sm2p256v1.N - 1))
 
 
 def hash2(double_G: Tuple[point, point]) -> int:
@@ -147,7 +147,7 @@ def hash2(double_G: Tuple[point, point]) -> int:
         for j in i:
             sm3.update(j.to_bytes(32))
     digest = sm3.digest()
-    digest = int.from_bytes(digest, "big") % sm2p256v1.P
+    digest = int.from_bytes(digest, "big") % sm2p256v1.N
     return digest
 
 
@@ -157,7 +157,7 @@ def hash3(triple_G: Tuple[point, point, point]) -> int:
         for j in i:
             sm3.update(j.to_bytes(32))
     digest = sm3.digest()
-    digest = int.from_bytes(digest, "big") % sm2p256v1.P
+    digest = int.from_bytes(digest, "big") % sm2p256v1.N
     return digest
 
 
@@ -168,7 +168,7 @@ def hash4(triple_G: Tuple[point, point, point], Zp: int) -> int:
             sm3.update(j.to_bytes(32))
     sm3.update(Zp.to_bytes(32))
     digest = sm3.digest()
-    digest = int.from_bytes(digest, "big") % sm2p256v1.P
+    digest = int.from_bytes(digest, "big") % sm2p256v1.N
     return digest
 
 
@@ -177,18 +177,14 @@ def KDF(G: point) -> int:
     for i in G:
         sm3.update(i.to_bytes(32))
     digest = sm3.digest()
-    digest = int.from_bytes(digest, "big") % sm2p256v1.P
+    digest = int.from_bytes(digest, "big") % sm2p256v1.N
     mask_128bit = (1 << 128) - 1
     digest = digest & mask_128bit
     return digest
 
 
-def GenerateKeyPair(lamda_parma: int, public_params: tuple) -> Tuple[point, int]:
+def GenerateKeyPair() -> Tuple[point, int]:
     """
-    params:
-    lamda_param: an init safety param
-    public_params: curve params
-
     return:
     public_key, secret_key
     """
@@ -248,7 +244,7 @@ def hash5(id: int, D: int) -> int:
     sm3.update(id.to_bytes(32))
     sm3.update(D.to_bytes(32))
     hash = sm3.digest()
-    hash = int.from_bytes(hash, "big") % G.P
+    hash = int.from_bytes(hash, "big") % G.N
     return hash
 
 
@@ -258,7 +254,7 @@ def hash6(triple_G: Tuple[point, point, point]) -> int:
         for j in i:
             sm3.update(j.to_bytes(32))
     hash = sm3.digest()
-    hash = int.from_bytes(hash, "big") % G.P
+    hash = int.from_bytes(hash, "big") % G.N
     return hash
 
 
@@ -274,7 +270,7 @@ def f(x: int, f_modulus: list, T: int) -> int:
     res = 0
     for i in range(T):
         res += f_modulus[i] * pow(x, i)
-    res = res % sm2p256v1.P
+    res = res % sm2p256v1.N
     return res
 
 
@@ -286,30 +282,30 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     rki(0 <= i <= N-1)
     """
     # 计算临时密钥对(x_A, X_A)
-    x_A = random.randint(0, G.P - 1)
+    x_A = random.randint(0, sm2p256v1.N - 1)
     X_A = multiply(g, x_A)
     
     pk_A = multiply(g, sk_A)
 
     # d是Bob的密钥对与临时密钥对的非交互式Diffie-Hellman密钥交换的结果
-    d = hash3((pk_A, pk_B, multiply(pk_B, x_A)))
+    d = hash3((X_A, pk_B, multiply(pk_B, x_A)))
 
     # 计算多项式系数, 确定代理节点的ID(一个点)
     f_modulus = []
     # 计算f0
-    f0 = (sk_A * inv(d, G.P)) % G.P
+    #f0 = (sk_A * inv(d, G.P)) % G.P
+    f0 = (sk_A * inv(d, sm2p256v1.N)) % sm2p256v1.N
     f_modulus.append(f0)
     # 计算fi(1 <= i <= T - 1)
     for i in range(1, T):
-        f_modulus.append(random.randint(0, G.P - 1))
+        f_modulus.append(random.randint(0, sm2p256v1.N - 1))
 
     # 计算D
-    D = hash6((X_A, pk_B, multiply(pk_B, sk_A)))
-
+    D = hash6((pk_A, pk_B, multiply(pk_B, sk_A)))
     # 计算KF
     KF = []
     for i in range(N):
-        y = random.randint(0, G.P - 1)
+        y = random.randint(0, sm2p256v1.N - 1)
         Y = multiply(g, y)
         s_x = hash5(i, D)  # id需要设置
         r_k = f(s_x, f_modulus, T)
@@ -321,12 +317,11 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
 
 
 def Encapsulate(pk_A: point) -> Tuple[int, capsule]:
-    r = random.randint(0, G.P - 1)
-    u = random.randint(0, G.P - 1)
+    r = random.randint(0, sm2p256v1.N - 1)
+    u = random.randint(0, sm2p256v1.N - 1)
     E = multiply(g, r)
     V = multiply(g, u)
-    s = u + r * hash2((E, V))
-    #s = s % sm2p256v1.P
+    s = (u + r * hash2((E, V))) % sm2p256v1.N
     pk_A_ru = multiply(pk_A, r + u)
     K = KDF(pk_A_ru)
     capsule = (E, V, s)
@@ -411,12 +406,12 @@ def DecapsulateFrags(sk_B: int, pk_B: point, pk_A: point, cFrags: list) -> int:
     bis = []  #  b ==> λ
     bi = 1
     for i in range(len(cFrags)):
+        bi = 1
         for j in range(len(cFrags)):
             if j != i:
-                # bi = bi * (Sx[j] // (Sx[j] - Sx[i]))  # 暂定整除
-                Sxj_sub_Sxi = (Sx[j] - Sx[i]) % sm2p256v1.P
-                Sxj_sub_Sxi_inv = inv(Sxj_sub_Sxi, sm2p256v1.P)
-                bi = (bi * Sx[j] * Sxj_sub_Sxi_inv) % sm2p256v1.P
+                Sxj_sub_Sxi = (Sx[j] - Sx[i]) % sm2p256v1.N
+                Sxj_sub_Sxi_inv = inv(Sxj_sub_Sxi, sm2p256v1.N)
+                bi = (bi * Sx[j] * Sxj_sub_Sxi_inv) % sm2p256v1.N
         bis.append(bi)
 
     E2 = multiply(Elist[0], bis[0])  #  E^  便于计算
