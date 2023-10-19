@@ -29,8 +29,7 @@ sm2p256v1 = CurveFp(
     Gy=0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0,
 )
 
-# 椭圆曲线
-G = sm2p256v1
+point = Tuple[int, int]
 
 # 生成元
 g = (sm2p256v1.Gx, sm2p256v1.Gy)
@@ -200,7 +199,6 @@ def GenerateKeyPair() -> Tuple[point, int]:
     return public_key, secret_key
 
 
-
 def Encrypt(pk: point, m: bytes) -> Tuple[capsule, bytes]:
     enca = Encapsulate(pk)
     K = enca[0].to_bytes(16)
@@ -244,7 +242,7 @@ def hash5(id: int, D: int) -> int:
     sm3.update(id.to_bytes(32))
     sm3.update(D.to_bytes(32))
     hash = sm3.digest()
-    hash = int.from_bytes(hash, "big") % G.N
+    hash = int.from_bytes(hash, "big") % sm2p256v1.N
     return hash
 
 
@@ -254,19 +252,19 @@ def hash6(triple_G: Tuple[point, point, point]) -> int:
         for j in i:
             sm3.update(j.to_bytes(32))
     hash = sm3.digest()
-    hash = int.from_bytes(hash, "big") % G.N
+    hash = int.from_bytes(hash, "big") % sm2p256v1.N
     return hash
 
 
 def f(x: int, f_modulus: list, T: int) -> int:
-    '''
+    """
     功能: 通过多项式插值来实现信息的分散和重构
     例如: 随机生成一个多项式f(x)=4x+5,质数P=11,其中f(0)=5,将多项式的系数分别分配给两个人,例如第一个人得到(1, 9),第二个人得到(2, 2).如果两个人都收集到了这两个点,那么可以使用拉格朗日插值法恢复原始的多项式,进而得到秘密信息"5"
     param:
     x, f_modulus(多项式系数列表), T(门限)
     return:
     res
-    '''
+    """
     res = 0
     for i in range(T):
         res += f_modulus[i] * pow(x, i)
@@ -284,7 +282,7 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     # 计算临时密钥对(x_A, X_A)
     x_A = random.randint(0, sm2p256v1.N - 1)
     X_A = multiply(g, x_A)
-    
+
     pk_A = multiply(g, sk_A)
 
     # d是Bob的密钥对与临时密钥对的非交互式Diffie-Hellman密钥交换的结果
@@ -293,7 +291,7 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     # 计算多项式系数, 确定代理节点的ID(一个点)
     f_modulus = []
     # 计算f0
-    #f0 = (sk_A * inv(d, G.P)) % G.P
+    # f0 = (sk_A * inv(d, G.P)) % G.P
     f0 = (sk_A * inv(d, sm2p256v1.N)) % sm2p256v1.N
     f_modulus.append(f0)
     # 计算fi(1 <= i <= T - 1)

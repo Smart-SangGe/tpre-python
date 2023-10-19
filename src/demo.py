@@ -1,17 +1,17 @@
 from tpre import *
 
 # 1
-pk_a, sk_a = GenerateKeyPair(1, ())
+pk_a, sk_a = GenerateKeyPair()
 m = b"hello world"
 
 # 2
 capsule_ct = Encrypt(pk_a, m)
 
 # 3
-pk_b, sk_b = GenerateKeyPair(1, ())
+pk_b, sk_b = GenerateKeyPair()
 
-N = 5
-T = 2
+N = 70
+T = 49
 
 # 5
 rekeys = GenerateReKey(sk_a, pk_b, N, T)
