@@ -10,6 +10,7 @@ The project uses the Chinese national standard cryptography algorithm to impleme
 .  
 ├── basedockerfile (being used to build base iamge)  
 ├── dockerfile (being used to build application)  
+├── doc (development documents)  
 ├── include (gmssl header)  
 ├── lib (gmssl shared object)  
 ├── LICENSE  
