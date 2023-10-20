@@ -1,6 +1,8 @@
 FROM python:3.11
 
-COPY src /app
+COPY requirements.txt /app/
+
+COPY lib/* /lib/
 
 WORKDIR /app
 
