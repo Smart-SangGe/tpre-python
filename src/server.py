@@ -28,7 +28,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS nodes (
                )''')
 
 def init():
-    nothing = receive_heartbeat_internal()
+    task = asyncio.create_task(receive_heartbeat_internal())
 
 def clean_env():
     # 关闭游标和连接
@@ -101,7 +101,7 @@ async def receive_heartbeat_internal() -> int:
         cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
         conn.commit()
         print('successful delete')
-        time.sleep(timeout)
+        await asyncio.sleep(timeout)
     return 1
 
 @app.get("/server/send_nodes_list")
