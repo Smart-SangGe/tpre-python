@@ -272,7 +272,7 @@ def f(x: int, f_modulus: list, T: int) -> int:
     return res
 
 
-def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
+def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int, id_tuple: Tuple[int,...]) -> list:
     """
     param:
     skA, pkB, N(节点总数), T(阈值)
@@ -288,7 +288,7 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     # d是Bob的密钥对与临时密钥对的非交互式Diffie-Hellman密钥交换的结果
     d = hash3((X_A, pk_B, multiply(pk_B, x_A)))
 
-    # 计算多项式系数, 确定代理节点的ID(一个点)
+    # 计算多项式系数
     f_modulus = []
     # 计算f0
     # f0 = (sk_A * inv(d, G.P)) % G.P
@@ -305,10 +305,10 @@ def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int) -> list:
     for i in range(N):
         y = random.randint(0, sm2p256v1.N - 1)
         Y = multiply(g, y)
-        s_x = hash5(i, D)  # id需要设置
+        s_x = hash5(id_tuple[i], D)  # id需要设置
         r_k = f(s_x, f_modulus, T)
         U1 = multiply(U, r_k)
-        kFrag = (i, r_k, X_A, U1)
+        kFrag = (id_tuple[i], r_k, X_A, U1)
         KF.append(kFrag)
 
     return KF
