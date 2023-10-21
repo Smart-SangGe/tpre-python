@@ -18,13 +18,15 @@ app = FastAPI(lifespan=lifespan)
 
 pk = point
 sk = int
+server_address = str
 
 
 def init():
-    global pk, sk
+    global pk, sk, server_address
     init_db()
     pk, sk = GenerateKeyPair()
-    get_node_list(6)
+    init_config()
+    get_node_list(6, server_address)  # type: ignore
 
 
 def init_db():
@@ -66,6 +68,16 @@ def init_db():
         print("Init Database Successful")
 
 
+def init_config():
+    import configparser
+
+    global server_address
+    config = configparser.ConfigParser()
+    config.read("client.ini")
+
+    server_address = config["settings"]["server_address"]
+
+
 # execute on exit
 def clean_env():
     print("Exit app")
@@ -86,7 +98,7 @@ async def receive_messages(C: Tuple[capsule, int], ip: str):
     C: capsule and ct
     ip: sender ip
     return:
-
+    status_code
     """
     if not C or not ip:
         raise HTTPException(status_code=400, detail="Invalid input data")
@@ -153,9 +165,9 @@ async def send_message(ip: tuple[str, ...]):
 async def request_message(ip):
     return 0
 
+
 # get node list from central server
-def get_node_list(count: int):
-    server_addr = ""
+def get_node_list(count: int, server_addr: str):
     url = "http://" + server_addr + "/server/send_nodes_list"
     payload = {"count": count}
     response = requests.post(url, json=payload)
@@ -182,4 +194,4 @@ def get_node_list(count: int):
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("client:app", host="0.0.0.0", port=8000)
+    uvicorn.run("client:app", host="0.0.0.0", port=8003)
