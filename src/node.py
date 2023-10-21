@@ -68,3 +68,52 @@ async def send_message(message: str):
     data = {"message": processed_message}
     response = requests.post(url, data=data)
     return response.json()
+
+
+import requests
+
+def send_heartbeat(url: str) -> bool:
+    try:
+        response = requests.get(url, timeout=5)  # 使用 GET 方法作为心跳请求
+        response.raise_for_status()  # 检查响应是否为 200 OK
+
+        # 可选：根据响应内容进行进一步验证
+        # if response.json() != expected_response:
+        #     return False
+
+        return True
+    except requests.RequestException:
+        return False
+
+# 使用方式
+url = "https://your-service-url.com/heartbeat"
+if send_heartbeat(url):
+    print("Service is alive!")
+else:
+    print("Service might be down or unreachable.")
+
+
+import asyncio
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+async def receive_heartbeat_internal() -> int:
+    while True:
+        print('successful delete1')
+        timeout = 10
+        # 删除超时的节点（假设你有一个异步的数据库操作函数）
+        await async_cursor_execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
+        await async_conn_commit()
+        print('successful delete')
+        await asyncio.sleep(timeout)
+
+    return 1
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(receive_heartbeat_internal())
+    yield
+    task.cancel()  # 取消我们之前创建的任务
+    await clean_env()  # 假设这是一个异步函数
+
+# 其他FastAPI应用的代码...

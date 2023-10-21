@@ -8,3 +8,5 @@ example.py
 ReEncrypt.py
 src/temp_message_file
 src/temp_key_file
+src/client.db
+src/server.db
