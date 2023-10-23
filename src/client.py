@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI):
     yield
     clean_env()
 
+
 app = FastAPI(lifespan=lifespan)
 
 
@@ -25,7 +26,7 @@ def init():
     init_db()
     pk, sk = GenerateKeyPair()
     init_config()
-    get_node_list(6, server_address)  # type: ignore
+    get_node_list(2, server_address)  # type: ignore
 
 
 def init_db():
@@ -92,6 +93,7 @@ async def read_root():
 class C(BaseModel):
     Tuple: Tuple[capsule, int]
     ip: str
+
 
 # receive messages from node
 @app.post("/receive_messages")
@@ -170,12 +172,9 @@ async def check_merge(db, ct: int, ip: str):
 
 
 # send message to node
-async def send_messages(node_ips: tuple[str, ...], 
-                        message: bytes, 
-                        dest_ip: str, 
-                        pk_B: point,
-                        shreshold: int
-                        ):
+async def send_messages(
+    node_ips: tuple[str, ...], message: bytes, dest_ip: str, pk_B: point, shreshold: int
+):
     global pk, sk
     id_list = []
     for node_ip in node_ips:
@@ -184,14 +183,14 @@ async def send_messages(node_ips: tuple[str, ...],
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
-    rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list)) # type: ignore
+    rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i] + ":8001" + "/recieve_message"
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
             "message": message,
-            "rk": rk_list[i]
+            "rk": rk_list[i],
         }
         response = requests.post(url, json=payload)
     return 0
@@ -203,6 +202,7 @@ class IP_Message(BaseModel):
     source_ip: str
     pk: int
 
+
 # request message from others
 @app.post("/request_message")
 async def request_message(i_m: IP_Message):
@@ -212,11 +212,12 @@ async def request_message(i_m: IP_Message):
     source_ip = get_own_ip()
     dest_port = "8003"
     url = "http://" + dest_ip + dest_port + "/recieve_request"
-    payload = {"dest_ip": dest_ip, 
-               "message_name": message_name, 
-               "source_ip": source_ip,
-               "pk": pk
-               }
+    payload = {
+        "dest_ip": dest_ip,
+        "message_name": message_name,
+        "source_ip": source_ip,
+        "pk": pk,
+    }
     response = requests.post(url, json=payload)
     if response.status_code == 200:
         data = response.json()
@@ -224,7 +225,7 @@ async def request_message(i_m: IP_Message):
         threshold = int(data["threshold"])
         with sqlite3.connect("client.db") as db:
             db.execute(
-        """
+                """
         INSERT INTO senderinfo
         (public_key, threshold)
         VALUES
@@ -255,17 +256,20 @@ async def recieve_request(i_m: IP_Message):
     threshold = random.randrange(1, 6)
     own_public_key = pk
     pk_B = i_m.pk
-    
+
     with sqlite3.connect("client.db") as db:
-        cursor = db.execute("""
+        cursor = db.execute(
+            """
                    SELECT nodeip
                    FROM node
                    LIMIT ?
-                   """,(threshold,))
+                   """,
+            (threshold,),
+        )
         node_ips = cursor.fetchall()
     message = b"hello world" + random.randbytes(8)
-    await send_messages(node_ips, message, dest_ip, pk_B, threshold) # type: ignore
-    response = {"threshold": threshold,"public_key": own_public_key}
+    await send_messages(node_ips, message, dest_ip, pk_B, threshold)  # type: ignore
+    response = {"threshold": threshold, "public_key": own_public_key}
     return response
 
 
@@ -303,7 +307,6 @@ def get_node_list(count: int, server_addr: str):
         print("Failed:", response.status_code, response.text)
 
 
-
 pk = point
 sk = int
 server_address = str
@@ -314,4 +317,4 @@ local_ip = get_own_ip()
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("client:app", host="0.0.0.0", port=8003, reload=True)
+    uvicorn.run("client:app", host="0.0.0.0", port=8002, reload=True)
