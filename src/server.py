@@ -95,20 +95,20 @@ async def receive_heartbeat_internal():
     while 1:
         timeout = 70
         # 删除超时的节点
-        cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
-        conn.commit()
+        # cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
+        # conn.commit()
         await asyncio.sleep(timeout)
 
 @app.get("/server/send_nodes_list")
-async def send_nodes_list(count: int) -> JSONResponse:
+async def send_nodes_list(count: int) -> list:
     '''
-    中心服务器与客户端交互, 客户端发送所需节点个数, 中心服务器从数据库中顺序取出节点封装成json格式返回给客户端
+    中心服务器与客户端交互, 客户端发送所需节点个数, 中心服务器从数据库中顺序取出节点封装成list格式返回给客户端
     params:  
     count: 所需节点个数  
     return:  
-    JSONResponse: {id: ip,...}  
+    nodes_list: list
     '''
-    nodes_list = {}
+    nodes_list = []
 
     # 查询数据库中的节点数据
     cursor.execute("SELECT * FROM nodes LIMIT ?", (count,))
@@ -116,10 +116,9 @@ async def send_nodes_list(count: int) -> JSONResponse:
 
     for row in rows:
         id, ip, last_heartbeat = row
-        nodes_list[id] = ip
+        nodes_list.append(ip)
 
-    json_result = jsonable_encoder(nodes_list)
-    return JSONResponse(content=json_result)
+    return nodes_list
 
 @app.get("/server/clear_database")
 async def clear_database() -> None:

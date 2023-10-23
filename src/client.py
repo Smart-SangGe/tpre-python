@@ -25,7 +25,7 @@ def init():
     init_db()
     pk, sk = GenerateKeyPair()
     init_config()
-    # get_node_list(6, server_address)  # type: ignore
+    get_node_list(6, server_address)  # type: ignore
 
 
 def init_db():
@@ -277,22 +277,25 @@ def get_own_ip() -> str:
 
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
-    url = "http://" + server_addr + "/server/send_nodes_list"
-    payload = {"count": count}
-    response = requests.post(url, json=payload)
+    url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
+    # payload = {"count": count}
+    # response = requests.post(url, json=payload)
+    response = requests.get(url)
     # Checking the response
     if response.status_code == 200:
         print("Success get node list")
         node_ip = response.text
+        node_ip = eval(node_ip)
+        print(node_ip)
         # insert node ip to database
         with sqlite3.connect("client.db") as db:
             db.executemany(
                 """
                 INSERT INTO node 
-                nodeip 
-                VALUE (?)
+                (nodeip) 
+                VALUES (?)
                 """,
-                node_ip,
+                [(ip,) for ip in node_ip],
             )
             db.commit()
         print("Success add node ip")
@@ -311,4 +314,4 @@ local_ip = get_own_ip()
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("client:app", host="0.0.0.0", port=8003, reload="True")
+    uvicorn.run("client:app", host="0.0.0.0", port=8003, reload=True)
