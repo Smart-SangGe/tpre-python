@@ -97,7 +97,7 @@ class C(BaseModel):
     Tuple: Tuple[capsule, int]
     ip: str
 
-# receive messages from node
+# receive messages from nodes
 @app.post("/receive_messages")
 async def receive_messages(message: C):
     """
@@ -181,13 +181,17 @@ async def send_messages(
 ):
     global pk, sk
     id_list = []
+    # calculate id of nodes
     for node_ip in node_ips:
         ip_parts = node_ip.split(".")
         id = 0
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
+    
+    # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
+    
     capsule_ct = Encrypt(pk, message)  # type: ignore
 
     for i in range(len(node_ips)):
@@ -315,8 +319,6 @@ def get_own_ip() -> str:
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
     url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
-    # payload = {"count": count}
-    # response = requests.post(url, json=payload)
     response = requests.get(url)
     # Checking the response
     if response.status_code == 200:
