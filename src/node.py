@@ -1,7 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,Request
 import requests
 from contextlib import asynccontextmanager
 import socket
+import asyncio
+from pydantic import BaseModel
+from tpre import *
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -12,18 +15,23 @@ async def lifespan(app: FastAPI):
     clear()
 
 app = FastAPI(lifespan=lifespan)
-server_address ="http://中心服务器IP地址:端口号/ip" 
+server_address ="http://中心服务器IP地址/server" 
 id = 0
+ip = ''
+client_ip_src = ''   # 发送信息用户的ip
+client_ip_des = ''   # 接收信息用户的ip
+processed_message = ()   # 重加密后的数据
+
+# class C(BaseModel):
+#     Tuple: Tuple[capsule, int]
+#     ip_src: str
 
 # 向中心服务器发送自己的IP地址,并获取自己的id
-def send_ip(ip: str):
-    url = server_address
+def send_ip():
+    url = server_address + '/get_node?ip = ' + ip
     # ip = get_local_ip # type: ignore
-    data = {"ip": ip}
-    response = requests.post(url, data=data)
-    data = response.json()
-    id = data['id']
-    return id
+    global id
+    id = requests.get(url)
 
 # 用socket获取本机ip
 def get_local_ip():
@@ -34,86 +42,61 @@ def get_local_ip():
     # 获取本地IP地址
     local_ip = s.getsockname()[0]
     s.close()
-    return local_ip
-  
+    global ip 
+    ip = local_ip
 
-id  = int
+
 def init():
-    ip = get_local_ip()
+    get_local_ip()
     global id
-    id = send_ip(ip)
-
+    send_ip()
+    task = asyncio.create_task(send_heartbeat_internal())
 def clear():
 
     pass
 
-@app.post("/heartbeat/")
-async def receive_heartbeat():
-    return {"status": "received"}
-
-
-
-
-
-
-
-
 # 接收用户发来的消息，经过处理之后，再将消息发送给其他用户
-@app.post("/send_message")
-async def send_message(message: str):
-    # 处理消息
-    processed_message = message.upper()
-    # 发送消息给其他用户
-    url = "http://其他用户IP地址:端口号/receive_message"
-    data = {"message": processed_message}
-    response = requests.post(url, data=data)
-    return response.json()
 
-
-import requests
-
-def send_heartbeat(url: str) -> bool:
-    try:
-        response = requests.get(url, timeout=5)  # 使用 GET 方法作为心跳请求
-        response.raise_for_status()  # 检查响应是否为 200 OK
-
-        # 可选：根据响应内容进行进一步验证
-        # if response.json() != expected_response:
-        #     return False
-
-        return True
-    except requests.RequestException:
-        return False
-
-# 使用方式
-url = "https://your-service-url.com/heartbeat"
-if send_heartbeat(url):
-    print("Service is alive!")
-else:
-    print("Service might be down or unreachable.")
-
-
-import asyncio
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-
-async def receive_heartbeat_internal() -> int:
+async def send_heartbeat_internal() -> None:
     while True:
-        print('successful delete1')
-        timeout = 10
+        # print('successful send my_heart')
+        global ip 
+        url = server_address + '/get_node?ip = ' + ip
+        folderol = requests.get(url)
+        timeout = 30
         # 删除超时的节点（假设你有一个异步的数据库操作函数）
-        await async_cursor_execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
-        await async_conn_commit()
-        print('successful delete')
         await asyncio.sleep(timeout)
 
-    return 1
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    task = asyncio.create_task(receive_heartbeat_internal())
-    yield
-    task.cancel()  # 取消我们之前创建的任务
-    await clean_env()  # 假设这是一个异步函数
 
-# 其他FastAPI应用的代码...
+@app.post("/user_src")    # 接收用户1发送的信息
+async def receive_user_src_message(message: Request):
+    json_data = await message.json()
+    global client_ip_src,client_ip_des
+    # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
+    global processed_message
+    processed_message =  ReEncrypt(kfrag, capsule_ct)
+
+
+
+def send_user_des_message():   # 发送消息给用户2
+    global processed_message,client_ip_src,client_ip_des
+
+    data = {
+    "Tuple": processed_message,   # 类型不匹配
+    "ip": client_ip_src
+}
+    
+# 发送 HTTP POST 请求
+    response = requests.post("http://"+ client_ip_des + "/receive_messages", json=data)
+    print(response)
+
+
+if __name__ == "__main__":
+    import uvicorn  # pylint: disable=e0401
+
+    uvicorn.run("node:app", host="0.0.0.0", port=8000, reload=True)
+
+
+
+
