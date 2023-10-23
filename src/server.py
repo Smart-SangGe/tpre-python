@@ -2,11 +2,9 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from typing import Tuple, Callable
 import sqlite3
 import asyncio
 import time
-import random
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,7 +26,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS nodes (
                )''')
 
 def init():
-    task = asyncio.create_task(receive_heartbeat_internal())
+    asyncio.create_task(receive_heartbeat_internal())
 
 def clean_env():
     # 关闭游标和连接
@@ -93,16 +91,13 @@ async def receive_heartbeat(ip: str):
         cursor.execute("UPDATE nodes SET last_heartbeat = ? WHERE ip = ?", (time.time(), ip))
         return {"status": "received"}     
     
-async def receive_heartbeat_internal() -> int:
+async def receive_heartbeat_internal():
     while 1:
-        print('successful delete1')
-        timeout = 10
+        timeout = 70
         # 删除超时的节点
         cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
         conn.commit()
-        print('successful delete')
         await asyncio.sleep(timeout)
-    return 1
 
 @app.get("/server/send_nodes_list")
 async def send_nodes_list(count: int) -> JSONResponse:
