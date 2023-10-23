@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 import requests
 from contextlib import asynccontextmanager
 import socket
@@ -77,24 +77,39 @@ async def send_heartbeat_internal() -> None:
 
 @app.post("/user_src")  # 接收用户1发送的信息
 async def receive_user_src_message(message: Request):
-    json_data = await message.json()
     global client_ip_src, client_ip_des
     # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
-    global processed_message
-    processed_message = ReEncrypt(kfrag, capsule_ct)
+    """
+    payload = {
+            "source_ip": local_ip,
+            "dest_ip": dest_ip,
+            "capsule_ct": capsule_ct,
+            "rk": rk_list[i],
+        }
+    """
+
+    data = await message.json()
+    source_ip = data.get("source_ip")
+    dest_ip = data.get("dest_ip")
+    capsule_ct = data.get("capsule_ct")
+    rk = data.get("rk")
+
+    processed_message = ReEncrypt(rk, capsule_ct)
+    await send_user_des_message(source_ip, dest_ip, processed_message)
+    return HTTPException(status_code=200, detail="message recieved")
 
 
-def send_user_des_message():  # 发送消息给用户2
-    global processed_message, client_ip_src, client_ip_des
-
-    data = {"Tuple": processed_message, "ip": client_ip_src}  # 类型不匹配
+async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # 发送消息给用户2
+    data = {"Tuple": re_message, "ip": source_ip}  # 类型不匹配
 
     # 发送 HTTP POST 请求
-    response = requests.post("http://" + client_ip_des + "/receive_messages", json=data)
+    response = requests.post(
+        "http://" + dest_ip + "/receive_messages?message", json=data
+    )
     print(response)
 
 
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("node:app", host="0.0.0.0", port=8000, reload=True)
