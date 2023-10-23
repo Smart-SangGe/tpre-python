@@ -17,14 +17,7 @@ async def lifespan(app: FastAPI):
     yield
     clean_env()
 
-
 app = FastAPI(lifespan=lifespan)
-
-pk = point
-sk = int
-server_address = str
-node_response = False
-message = bytes
 
 
 def init():
@@ -99,7 +92,6 @@ async def read_root():
 class C(BaseModel):
     Tuple: Tuple[capsule, int]
     ip: str
-
 
 # receive messages from node
 @app.post("/receive_messages")
@@ -178,7 +170,30 @@ async def check_merge(db, ct: int, ip: str):
 
 
 # send message to node
-def send_message(ip: tuple[str, ...]):
+async def send_messages(node_ips: tuple[str, ...], 
+                        message: bytes, 
+                        dest_ip: str, 
+                        pk_B: point,
+                        shreshold: int
+                        ):
+    global pk, sk
+    id_list = []
+    for node_ip in node_ips:
+        ip_parts = node_ip.split(".")
+        id = 0
+        for i in range(4):
+            id += int(ip_parts[i]) << (24 - (8 * i))
+        id_list.append(id)
+    rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list)) # type: ignore
+    for i in range(len(node_ips)):
+        url = "http://" + node_ips[i] + ":8001" + "/recieve_message"
+        payload = {
+            "source_ip": local_ip,
+            "dest_ip": dest_ip,
+            "message": message,
+            "rk": rk_list[i]
+        }
+        response = requests.post(url, json=payload)
     return 0
 
 
@@ -186,18 +201,22 @@ class IP_Message(BaseModel):
     dest_ip: str
     message_name: str
     source_ip: str
-
+    pk: int
 
 # request message from others
 @app.post("/request_message")
 async def request_message(i_m: IP_Message):
-    global message, node_response
+    global message, node_response, pk
     dest_ip = i_m.dest_ip
     message_name = i_m.message_name
     source_ip = get_own_ip()
     dest_port = "8003"
     url = "http://" + dest_ip + dest_port + "/recieve_request"
-    payload = {"dest_ip": dest_ip, "message_name": message_name, "source_ip": source_ip}
+    payload = {"dest_ip": dest_ip, 
+               "message_name": message_name, 
+               "source_ip": source_ip,
+               "pk": pk
+               }
     response = requests.post(url, json=payload)
     if response.status_code == 200:
         data = response.json()
@@ -205,7 +224,7 @@ async def request_message(i_m: IP_Message):
         threshold = int(data["threshold"])
         with sqlite3.connect("client.db") as db:
             db.execute(
-                """
+        """
         INSERT INTO senderinfo
         (public_key, threshold)
         VALUES
@@ -222,6 +241,7 @@ async def request_message(i_m: IP_Message):
             # return message to frontend
             return {"message": data}
         time.sleep(1)
+    return {"message": "recieve timeout"}
 
 
 # recieve request from others
@@ -233,8 +253,19 @@ async def recieve_request(i_m: IP_Message):
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
     threshold = random.randrange(1, 6)
-    public_key = pk
-    response = {"threshold": threshold,"public_key": public_key}
+    own_public_key = pk
+    pk_B = i_m.pk
+    
+    with sqlite3.connect("client.db") as db:
+        cursor = db.execute("""
+                   SELECT nodeip
+                   FROM node
+                   LIMIT ?
+                   """,(threshold,))
+        node_ips = cursor.fetchall()
+    message = b"hello world" + random.randbytes(8)
+    await send_messages(node_ips, message, dest_ip, pk_B, threshold) # type: ignore
+    response = {"threshold": threshold,"public_key": own_public_key}
     return response
 
 
@@ -268,6 +299,14 @@ def get_node_list(count: int, server_addr: str):
     else:
         print("Failed:", response.status_code, response.text)
 
+
+
+pk = point
+sk = int
+server_address = str
+node_response = False
+message = bytes
+local_ip = get_own_ip()
 
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
