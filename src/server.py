@@ -29,6 +29,7 @@ def init():
     asyncio.create_task(receive_heartbeat_internal())
 
 def clean_env():
+    clear_database()
     # 关闭游标和连接
     cursor.close()
     conn.close()
@@ -93,7 +94,7 @@ async def receive_heartbeat(ip: str):
     
 async def receive_heartbeat_internal():
     while 1:
-        timeout = 70
+        timeout = 7
         # 删除超时的节点
         # cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
         # conn.commit()
@@ -120,8 +121,8 @@ async def send_nodes_list(count: int) -> list:
 
     return nodes_list
 
-@app.get("/server/clear_database")
-async def clear_database() -> None:
+# @app.get("/server/clear_database")
+def clear_database() -> None:
     cursor.execute("DELETE FROM nodes")
     conn.commit()
 
