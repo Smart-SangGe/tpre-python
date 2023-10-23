@@ -29,7 +29,7 @@ def init():
     # load config from config file
     init_config()
 
-    # get_node_list(6, server_address)  # type: ignore
+    get_node_list(2, server_address)  # type: ignore
 
 
 def init_db():
@@ -286,7 +286,7 @@ async def recieve_request(i_m: IP_Message):
     if source_ip != i_m.dest_ip:
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
-    threshold = random.randrange(1, 6)
+    threshold = random.randrange(1, 2)
     own_public_key = pk
     pk_B = i_m.pk
 
@@ -352,4 +352,4 @@ local_ip = get_own_ip()
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("client:app", host="0.0.0.0", port=8003, reload=True)
+    uvicorn.run("client:app", host="0.0.0.0", port=8002, reload=True)

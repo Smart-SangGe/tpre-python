@@ -86,7 +86,7 @@ async def delete_node(ip: str) -> None:
         print(f"Node with IP {ip} not found.")
 
 # 接收节点心跳包
-@app.post("/server/heartbeat")
+@app.get("/server/heartbeat")
 async def receive_heartbeat(ip: str):
         cursor.execute("UPDATE nodes SET last_heartbeat = ? WHERE ip = ?", (time.time(), ip))
         return {"status": "received"}     
