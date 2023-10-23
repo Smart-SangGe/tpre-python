@@ -20,18 +20,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-pk = point
-sk = int
-server_address = str
-node_response = False
-message = bytes
-
 
 def init():
     global pk, sk, server_address
     init_db()
     pk, sk = GenerateKeyPair()
+
+    # load config from config file
     init_config()
+
     # get_node_list(6, server_address)  # type: ignore
 
 
@@ -100,14 +97,13 @@ class C(BaseModel):
     Tuple: Tuple[capsule, int]
     ip: str
 
-
-# receive messages from node
+# receive messages from nodes
 @app.post("/receive_messages")
 async def receive_messages(message: C):
     """
     receive capsule and ip from nodes
     params:
-    C: capsule and ct
+    Tuple: capsule and ct
     ip: sender ip
     return:
     status_code
@@ -137,7 +133,7 @@ async def receive_messages(message: C):
                 (C_capsule, C_ct, ip),
             )
             db.commit()
-            await check_merge(db, C_ct, ip)
+            await check_merge(C_ct, ip)
             return HTTPException(status_code=200, detail="Message received")
         except Exception as e:
             print(f"Error occurred: {e}")
@@ -146,31 +142,33 @@ async def receive_messages(message: C):
 
 
 # check record count
-async def check_merge(db, ct: int, ip: str):
+async def check_merge(ct: int, ip: str):
     global sk, pk, node_response, message
+    with sqlite3.connect("client.db") as db:
     # Check if the combination of ct_column and ip_column appears more than once.
-    cursor = db.execute(
-        """
-    SELECT capsule, ct 
-    FROM message  
-    WHERE ct = ? AND senderip = ?
-    """,
-        (ct, ip),
-    )
-    # [(capsule, ct), ...]
-    cfrag_cts = cursor.fetchall()
+        cursor = db.execute(
+            """
+        SELECT capsule, ct 
+        FROM message  
+        WHERE ct = ? AND senderip = ?
+        """,
+            (ct, ip),
+        )
+        # [(capsule, ct), ...]
+        cfrag_cts = cursor.fetchall()
 
-    # get N
-    cursor = db.execute(
-        """
-    SELECT publickey, threshold 
-    FROM senderinfo
-    WHERE senderip = ?
-    """,
-        (ip),
-    )
-    result = cursor.fetchall()
-    pk_sender, T = result[0]
+        # get T
+        cursor = db.execute(
+            """
+        SELECT publickey, threshold 
+        FROM senderinfo
+        WHERE senderip = ?
+        """,
+            (ip),
+        )
+        result = cursor.fetchall()
+        pk_sender, T = result[0] # result[0] = (pk, threshold)
+        
     if len(cfrag_cts) >= T:
         cfrags = mergecfrag(cfrag_cts)
         message = DecryptFrags(sk, pk, pk_sender, cfrags)  # type: ignore
@@ -178,7 +176,36 @@ async def check_merge(db, ct: int, ip: str):
 
 
 # send message to node
-def send_message(ip: tuple[str, ...]):
+async def send_messages(
+    node_ips: tuple[str, ...], message: bytes, dest_ip: str, pk_B: point, shreshold: int
+):
+    global pk, sk
+    id_list = []
+    # calculate id of nodes
+    for node_ip in node_ips:
+        ip_parts = node_ip.split(".")
+        id = 0
+        for i in range(4):
+            id += int(ip_parts[i]) << (24 - (8 * i))
+        id_list.append(id)
+    
+    # generate rk
+    rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
+    
+    capsule_ct = Encrypt(pk, message)  # type: ignore
+
+    for i in range(len(node_ips)):
+        url = "http://" + node_ips[i] + ":8001" + "/user_src?message"
+
+        payload = {
+            "source_ip": local_ip,
+            "dest_ip": dest_ip,
+            "capsule_ct": capsule_ct,
+            "rk": rk_list[i],
+        }
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print(f"send to {node_ips[i]} successful")
     return 0
 
 
@@ -186,42 +213,69 @@ class IP_Message(BaseModel):
     dest_ip: str
     message_name: str
     source_ip: str
+    pk: int
+
+
+class Request_Message(BaseModel):
+    dest_ip: str
+    message_name: str
 
 
 # request message from others
 @app.post("/request_message")
-async def request_message(i_m: IP_Message):
-    global message, node_response
+async def request_message(i_m: Request_Message):
+    global message, node_response, pk
     dest_ip = i_m.dest_ip
+    # dest_ip = dest_ip.split(":")[0]
     message_name = i_m.message_name
     source_ip = get_own_ip()
     dest_port = "8003"
-    url = "http://" + dest_ip + dest_port + "/recieve_request"
-    payload = {"dest_ip": dest_ip, "message_name": message_name, "source_ip": source_ip}
-    response = requests.post(url, json=payload)
-    if response.status_code == 200:
-        data = response.json()
-        public_key = int(data["public_key"])
-        threshold = int(data["threshold"])
-        with sqlite3.connect("client.db") as db:
-            db.execute(
-                """
-        INSERT INTO senderinfo
-        (public_key, threshold)
-        VALUES
-        (?, ?)
-        """,
-                (public_key, threshold),
-            )
+    url = "http://" + dest_ip + ":" + dest_port + "/recieve_request?i_m"
+    payload = {
+        "dest_ip": dest_ip,
+        "message_name": message_name,
+        "source_ip": source_ip,
+        "pk": pk,
+    }
+    try:
+        response = requests.post(url, json=payload)
 
-    # wait to recieve message from nodes
+    except:
+        print("can't post")
+        return {"message": "can't post"}
+
+    try:
+        if response.status_code == 200:
+            data = response.json()
+            public_key = int(data["public_key"])
+            threshold = int(data["threshold"])
+            with sqlite3.connect("client.db") as db:
+                db.execute(
+                    """
+            INSERT INTO senderinfo
+            (public_key, threshold)
+            VALUES
+            (?, ?)
+            """,
+                    (public_key, threshold),
+                )
+    except:
+        print("Database error")
+        return {"message": "Database Error"}
+
+    # wait 10s to recieve message from nodes
     for _ in range(10):
         if node_response:
             data = message
+            
+            # reset message and node_response
             message = b""
+            node_response = False
+
             # return message to frontend
             return {"message": data}
         time.sleep(1)
+    return {"message": "recieve timeout"}
 
 
 # recieve request from others
@@ -233,8 +287,26 @@ async def recieve_request(i_m: IP_Message):
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
     threshold = random.randrange(1, 6)
-    public_key = pk
-    response = {"threshold": threshold,"public_key": public_key}
+    own_public_key = pk
+    pk_B = i_m.pk
+
+    with sqlite3.connect("client.db") as db:
+        cursor = db.execute(
+            """
+                   SELECT nodeip
+                   FROM node
+                   LIMIT ?
+                   """,
+            (threshold,),
+        )
+        node_ips = cursor.fetchall()
+        
+    # message name
+    message = b"hello world" + random.randbytes(8)
+    
+    # send message to nodes
+    await send_messages(node_ips, message, dest_ip, pk_B, threshold)  # type: ignore
+    response = {"threshold": threshold, "public_key": own_public_key}
     return response
 
 
@@ -246,22 +318,23 @@ def get_own_ip() -> str:
 
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
-    url = "http://" + server_addr + "/server/send_nodes_list"
-    payload = {"count": count}
-    response = requests.post(url, json=payload)
+    url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
+    response = requests.get(url)
     # Checking the response
     if response.status_code == 200:
         print("Success get node list")
         node_ip = response.text
+        node_ip = eval(node_ip)
+        print(node_ip)
         # insert node ip to database
         with sqlite3.connect("client.db") as db:
             db.executemany(
                 """
                 INSERT INTO node 
-                nodeip 
-                VALUE (?)
+                (nodeip) 
+                VALUES (?)
                 """,
-                node_ip,
+                [(ip,) for ip in node_ip],
             )
             db.commit()
         print("Success add node ip")
@@ -269,7 +342,14 @@ def get_node_list(count: int, server_addr: str):
         print("Failed:", response.status_code, response.text)
 
 
+pk = point
+sk = int
+server_address = str
+node_response = False
+message = bytes
+local_ip = get_own_ip()
+
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("client:app", host="0.0.0.0", port=8003, reload="True")
+    uvicorn.run("client:app", host="0.0.0.0", port=8003, reload=True)

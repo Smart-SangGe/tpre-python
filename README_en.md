@@ -21,6 +21,7 @@ The project uses the Chinese national standard cryptography algorithm to impleme
 
 ## Environment Dependencies
 
+### Bare mental version(UNTESTED)
 System requirements:  
 - Linux
 - Windows(may need to complie and install gmssl yourself)
@@ -30,22 +31,24 @@ The project relies on the following software:
 - gmssl
 - gmssl-python
 
+### Docker version
+docker version:  
+- Version:           24.0.5  
+- API version:       1.43  
+- Go version:        go1.20.6  
 ## Installation Steps
 
 ### Pre-installation
 This project depends on gmssl, so you need to compile it from source first.  
 Visit [GmSSL](https://github.com/guanzhi/GmSSL) to learn how to install.  
 
+Then install essential python libs  
 ```bash
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 
 ## Docker Installation
-my docker version:
-- Version:           24.0.5
-- API version:       1.43
-- Go version:        go1.20.6
 
 ### Use base image and build yourself
 ```bash
