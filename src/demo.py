@@ -24,7 +24,8 @@ T = 5
 
 # 5
 start_time = time.time()
-rekeys = GenerateReKey(sk_a, pk_b, N, T)
+id_tuple = tuple(range(N))
+rekeys = GenerateReKey(sk_a, pk_b, N, T, id_tuple)
 end_time = time.time()
 elapsed_time = end_time - start_time
 print(f"代码块5运行时间:{elapsed_time}秒")
