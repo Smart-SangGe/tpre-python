@@ -213,7 +213,7 @@ class IP_Message(BaseModel):
     dest_ip: str
     message_name: str
     source_ip: str
-    pk: int
+    pk: Tuple[int, int]
 
 
 class Request_Message(BaseModel):
@@ -305,7 +305,7 @@ async def recieve_request(i_m: IP_Message):
     message = b"hello world" + random.randbytes(8)
     
     # send message to nodes
-    await send_messages(node_ips, message, dest_ip, pk_B, threshold)  # type: ignore
+    await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)  
     response = {"threshold": threshold, "public_key": own_public_key}
     return response
 
