@@ -9,17 +9,15 @@ from tpre import *
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load the ML model
     init()
     yield
-    # Clean up the ML models and release the resources
     clear()
 
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://中心服务器IP地址/server"
+server_address = "http://10.20.14.232:8000/server"
 id = 0
-ip = ""
+ip = "10.16.21.163"
 client_ip_src = ""  # 发送信息用户的ip
 client_ip_des = ""  # 接收信息用户的ip
 processed_message = ()  # 重加密后的数据
@@ -31,8 +29,8 @@ processed_message = ()  # 重加密后的数据
 
 # 向中心服务器发送自己的IP地址,并获取自己的id
 def send_ip():
-    url = server_address + "/get_node?ip = " + ip
-    # ip = get_local_ip # type: ignore
+    url = server_address + "/get_node?ip=" + ip
+    # ip = get_local_ip() # type: ignore
     global id
     id = requests.get(url)
 
@@ -51,10 +49,11 @@ def get_local_ip():
 
 
 def init():
-    get_local_ip()
+    # get_local_ip()
     global id
     send_ip()
     task = asyncio.create_task(send_heartbeat_internal())
+    print("Finish init")
 
 
 def clear():
@@ -65,12 +64,16 @@ def clear():
 
 
 async def send_heartbeat_internal() -> None:
+    timeout = 3
+    global ip
+    url = server_address + "/heartbeat?ip=" + ip
     while True:
         # print('successful send my_heart')
-        global ip
-        url = server_address + "/get_node?ip = " + ip
-        folderol = requests.get(url)
-        timeout = 30
+        try:
+            folderol = requests.get(url)
+        except:
+            print("Central server error")
+        
         # 删除超时的节点（假设你有一个异步的数据库操作函数）
         await asyncio.sleep(timeout)
 
@@ -79,36 +82,37 @@ async def send_heartbeat_internal() -> None:
 async def receive_user_src_message(message: Request):
     global client_ip_src, client_ip_des
     # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
-    '''
+    """
     payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
             "capsule_ct": capsule_ct,
             "rk": rk_list[i],
         }
-    '''
-    
+    """
+
     data = await message.json()
     source_ip = data.get("source_ip")
     dest_ip = data.get("dest_ip")
     capsule_ct = data.get("capsule_ct")
     rk = data.get("rk")
-    
+
     processed_message = ReEncrypt(rk, capsule_ct)
     await send_user_des_message(source_ip, dest_ip, processed_message)
     return HTTPException(status_code=200, detail="message recieved")
 
 
 async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # 发送消息给用户2
-
     data = {"Tuple": re_message, "ip": source_ip}  # 类型不匹配
 
     # 发送 HTTP POST 请求
-    response = requests.post("http://" + dest_ip + "/receive_messages?message", json=data)
+    response = requests.post(
+        "http://" + dest_ip + "/receive_messages?message", json=data
+    )
     print(response)
 
 
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
