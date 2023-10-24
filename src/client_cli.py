@@ -3,7 +3,7 @@ import requests
 
 
 def send_post_request(ip_addr, message_name):
-    url = f"http://localhost:8002/request_message/"
+    url = f"http://localhost:8002/request_message"
     data = {"dest_ip": ip_addr, "message_name": message_name}
     response = requests.post(url, json=data)
     return response.text

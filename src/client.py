@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import socket
 import random
 import time
+import base64
 
 
 @asynccontextmanager
@@ -200,11 +201,10 @@ async def send_messages(
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
-        print(url)
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
-            "capsule_ct": capsule_ct,
+            "capsule_ct": base64.b64encode(str(capsule_ct)),
             "rk": rk_list[i],
         }
         print(payload)
@@ -245,6 +245,7 @@ async def request_message(i_m: Request_Message):
     }
     try:
         response = requests.post(url, json=payload, timeout=3)
+        print(response.text)
 
     except:
         print("can't post")
