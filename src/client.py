@@ -326,15 +326,15 @@ async def recieve_request(i_m: IP_Message):
 
 
 def get_own_ip() -> str:
-    hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
+    
+    ip = os.environ.get("HOST_IP", "IP not set")
     return ip
 
 
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
     url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
-    response = requests.get(url)
+    response = requests.get(url,timeout=3)
     # Checking the response
     if response.status_code == 200:
         print("Success get node list")

@@ -112,8 +112,8 @@ async def receive_heartbeat_internal():
     while 1:
         timeout = 7
         # 删除超时的节点
-        # cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
-        # conn.commit()
+        cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
+        conn.commit()
         await asyncio.sleep(timeout)
 
 

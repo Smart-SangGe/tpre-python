@@ -108,4 +108,4 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # Âè
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=False)
