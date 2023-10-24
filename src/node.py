@@ -33,7 +33,7 @@ def send_ip():
     url = server_address + "/get_node?ip=" + ip
     # ip = get_local_ip() # type: ignore
     global id
-    id = requests.get(url)
+    id = requests.get(url,timeout=3)
 
 
 # 用环境变量获取本机ip
@@ -50,7 +50,7 @@ def init():
 
 
 def clear():
-    pass
+    print("exit node")
 
 
 # 接收用户发来的消息，经过处理之后，再将消息发送给其他用户
@@ -63,7 +63,7 @@ async def send_heartbeat_internal() -> None:
     while True:
         # print('successful send my_heart')
         try:
-            folderol = requests.get(url)
+            folderol = requests.get(url,timeout=3)
         except:
             print("Central server error")
 
