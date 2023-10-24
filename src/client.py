@@ -84,6 +84,9 @@ def init_config():
 
 # execute on exit
 def clean_env():
+    with sqlite3.connect("client.db") as db:
+        db.execute("DELETE FROM node")
+        db.commit()
     print("Exit app")
 
 
@@ -229,7 +232,7 @@ async def request_message(i_m: Request_Message):
     # dest_ip = dest_ip.split(":")[0]
     message_name = i_m.message_name
     source_ip = get_own_ip()
-    dest_port = "8003"
+    dest_port = "8002"
     url = "http://" + dest_ip + ":" + dest_port + "/recieve_request?i_m"
     payload = {
         "dest_ip": dest_ip,
@@ -238,7 +241,7 @@ async def request_message(i_m: Request_Message):
         "pk": pk,
     }
     try:
-        response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=3)
 
     except:
         print("can't post")
@@ -249,6 +252,7 @@ async def request_message(i_m: Request_Message):
             data = response.json()
             public_key = int(data["public_key"])
             threshold = int(data["threshold"])
+            print(data)
             with sqlite3.connect("client.db") as db:
                 db.execute(
                     """
@@ -264,7 +268,7 @@ async def request_message(i_m: Request_Message):
         return {"message": "Database Error"}
 
     # wait 10s to recieve message from nodes
-    for _ in range(10):
+    for _ in range(3):
         if node_response:
             data = message
             
