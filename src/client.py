@@ -311,8 +311,8 @@ async def recieve_request(i_m: IP_Message):
 
 
 def get_own_ip() -> str:
-    hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
+    
+    ip = os.environ.get("HOST_IP", "IP not set")
     return ip
 
 
