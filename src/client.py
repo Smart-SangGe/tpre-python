@@ -197,14 +197,15 @@ async def send_messages(
     # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
 
-    capsule_ct = Encrypt(pk, message)  # type: ignore
+    capsule, ct = Encrypt(pk, message)  # type: ignore
+    capsule_ct = (capsule, int.from_bytes(ct))
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
-            "capsule_ct": base64.b64encode(str(capsule_ct)),
+            "capsule_ct": capsule_ct,
             "rk": rk_list[i],
         }
         print(payload)

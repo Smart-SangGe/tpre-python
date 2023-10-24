@@ -76,7 +76,7 @@ async def send_heartbeat_internal() -> None:
 class Req(BaseModel):
     source_ip: str
     dest_ip: str
-    capsule_ct: Tuple[capsule, bytes]
+    capsule_ct: Tuple[capsule, int]
     rk: Any
 
 
@@ -94,8 +94,8 @@ async def user_src(message: Req):
     """
     source_ip = message.source_ip
     dest_ip = message.dest_ip
-    b64capsule_ct = message.capsule_ct
-    capsule_ct = base64.b64decode(b64capsule_ct)
+    capsule, ct = message.capsule_ct
+    capsule_ct = (capsule, ct.to_bytes())
     rk = message.rk
 
     processed_message = ReEncrypt(rk, capsule_ct)
