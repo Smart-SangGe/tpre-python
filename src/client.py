@@ -96,6 +96,7 @@ class C(BaseModel):
     Tuple: Tuple[capsule, int]
     ip: str
 
+
 # receive messages from nodes
 @app.post("/receive_messages")
 async def receive_messages(message: C):
@@ -144,7 +145,7 @@ async def receive_messages(message: C):
 async def check_merge(ct: int, ip: str):
     global sk, pk, node_response, message
     with sqlite3.connect("client.db") as db:
-    # Check if the combination of ct_column and ip_column appears more than once.
+        # Check if the combination of ct_column and ip_column appears more than once.
         cursor = db.execute(
             """
         SELECT capsule, ct 
@@ -166,8 +167,8 @@ async def check_merge(ct: int, ip: str):
             (ip),
         )
         result = cursor.fetchall()
-        pk_sender, T = result[0] # result[0] = (pk, threshold)
-        
+        pk_sender, T = result[0]  # result[0] = (pk, threshold)
+
     if len(cfrag_cts) >= T:
         cfrags = mergecfrag(cfrag_cts)
         message = DecryptFrags(sk, pk, pk_sender, cfrags)  # type: ignore
@@ -180,6 +181,7 @@ async def send_messages(
 ):
     global pk, sk
     id_list = []
+    print(node_ips)
     # calculate id of nodes
     for node_ip in node_ips:
         ip_parts = node_ip.split(".")
@@ -187,10 +189,10 @@ async def send_messages(
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
-    
+
     # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
-    
+
     capsule_ct = Encrypt(pk, message)  # type: ignore
 
     for i in range(len(node_ips)):
@@ -255,9 +257,6 @@ async def request_message(i_m: Request_Message):
         """,
                 (public_key, threshold),
             )
-    
-
-    
 
     try:
         if response.status_code == 200:
@@ -282,7 +281,7 @@ async def request_message(i_m: Request_Message):
     for _ in range(10):
         if node_response:
             data = message
-            
+
             # reset message and node_response
             message = b""
             node_response = False
@@ -301,7 +300,8 @@ async def recieve_request(i_m: IP_Message):
     if source_ip != i_m.dest_ip:
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
-    threshold = random.randrange(1, 2)
+    # threshold = random.randrange(1, 2)
+    threshold = 2
     own_public_key = pk
     pk_B = i_m.pk
 
@@ -315,18 +315,17 @@ async def recieve_request(i_m: IP_Message):
             (threshold,),
         )
         node_ips = cursor.fetchall()
-        
+
     # message name
     message = b"hello world" + random.randbytes(8)
-    
+
     # send message to nodes
-    await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)  
+    await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)
     response = {"threshold": threshold, "public_key": own_public_key}
     return response
 
 
 def get_own_ip() -> str:
-    
     ip = os.environ.get("HOST_IP", "IP not set")
     return ip
 
@@ -334,7 +333,7 @@ def get_own_ip() -> str:
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
     url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
-    response = requests.get(url,timeout=3)
+    response = requests.get(url, timeout=3)
     # Checking the response
     if response.status_code == 200:
         print("Success get node list")
