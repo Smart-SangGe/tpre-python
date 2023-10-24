@@ -184,7 +184,7 @@ async def send_messages(
 ):
     global pk, sk
     id_list = []
-    print(node_ips)
+
     # calculate id of nodes
     for node_ip in node_ips:
         node_ip = node_ip[0]
@@ -193,7 +193,6 @@ async def send_messages(
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
-
     # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
 
@@ -201,7 +200,7 @@ async def send_messages(
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src?message"
-
+        print(url)
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
@@ -209,6 +208,7 @@ async def send_messages(
             "rk": rk_list[i],
         }
         response = requests.post(url, json=payload)
+
         if response.status_code == 200:
             print(f"send to {node_ips[i]} successful")
     return 0
@@ -329,6 +329,7 @@ async def recieve_request(i_m: IP_Message):
     # send message to nodes
     await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)
     response = {"threshold": threshold, "public_key": own_public_key}
+    print("###############RESPONSE = ", response)
     return response
 
 
