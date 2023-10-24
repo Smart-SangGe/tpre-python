@@ -1,3 +1,4 @@
 gmssl-python
 fastapi
 uvicorn
+requests
