@@ -15,9 +15,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://10.20.14.232:8000/server"
+server_address = "http://110.41.155.96:8000/server"
 id = 0
-ip = "10.16.21.163"
+ip = ""
 client_ip_src = ""  # 发送信息用户的ip
 client_ip_des = ""  # 接收信息用户的ip
 processed_message = ()  # 重加密后的数据
@@ -73,7 +73,7 @@ async def send_heartbeat_internal() -> None:
             folderol = requests.get(url)
         except:
             print("Central server error")
-        
+
         # 删除超时的节点（假设你有一个异步的数据库操作函数）
         await asyncio.sleep(timeout)
 
