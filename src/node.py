@@ -6,6 +6,7 @@ import asyncio
 from pydantic import BaseModel
 from tpre import *
 import os
+from typing import Any, Tuple
 
 
 @asynccontextmanager
@@ -71,8 +72,15 @@ async def send_heartbeat_internal() -> None:
         await asyncio.sleep(timeout)
 
 
+class Req(BaseModel):
+    source_ip: str
+    dest_ip: str
+    capsule_ct: Tuple[capsule, bytes]
+    rk: Any
+
+
 @app.post("/user_src")  # 接收用户1发送的信息
-async def receive_user_src_message(message: Request):
+async def receive_user_src_message(message: Req):
     global client_ip_src, client_ip_des
     # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
     """
@@ -83,12 +91,11 @@ async def receive_user_src_message(message: Request):
             "rk": rk_list[i],
         }
     """
-
-    data = await message.json()
-    source_ip = data.get("source_ip")
-    dest_ip = data.get("dest_ip")
-    capsule_ct = data.get("capsule_ct")
-    rk = data.get("rk")
+    print(type(message))
+    source_ip = message.source_ip
+    dest_ip = message.dest_ip
+    capsule_ct = message.capsule_ct
+    rk = message.rk
 
     processed_message = ReEncrypt(rk, capsule_ct)
     await send_user_des_message(source_ip, dest_ip, processed_message)
@@ -108,4 +115,4 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=False)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
