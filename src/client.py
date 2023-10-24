@@ -187,6 +187,7 @@ async def send_messages(
     print(node_ips)
     # calculate id of nodes
     for node_ip in node_ips:
+        node_ip = node_ip[0]
         ip_parts = node_ip.split(".")
         id = 0
         for i in range(4):
@@ -199,7 +200,7 @@ async def send_messages(
     capsule_ct = Encrypt(pk, message)  # type: ignore
 
     for i in range(len(node_ips)):
-        url = "http://" + node_ips[i] + ":8001" + "/user_src?message"
+        url = "http://" + node_ips[i][0] + ":8001" + "/user_src?message"
 
         payload = {
             "source_ip": local_ip,
@@ -243,6 +244,7 @@ async def request_message(i_m: Request_Message):
     }
     try:
         response = requests.post(url, json=payload, timeout=3)
+        print(response.text)
 
     except:
         print("can't post")
