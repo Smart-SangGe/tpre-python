@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from tpre import *
 import os
 from typing import Any, Tuple
+import base64
 
 
 @asynccontextmanager
@@ -80,7 +81,7 @@ class Req(BaseModel):
 
 
 @app.post("/user_src")  # 接收用户1发送的信息
-async def receive_user_src_message(message: Req):
+async def user_src(message: Req):
     global client_ip_src, client_ip_des
     # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
     """
@@ -91,10 +92,10 @@ async def receive_user_src_message(message: Req):
             "rk": rk_list[i],
         }
     """
-    print(type(message))
     source_ip = message.source_ip
     dest_ip = message.dest_ip
-    capsule_ct = message.capsule_ct
+    b64capsule_ct = message.capsule_ct
+    capsule_ct = base64.b64decode(b64capsule_ct)
     rk = message.rk
 
     processed_message = ReEncrypt(rk, capsule_ct)
@@ -107,7 +108,7 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 
     # 发送 HTTP POST 请求
     response = requests.post(
-        "http://" + dest_ip + "/receive_messages?message", json=data
+        "http://" + dest_ip + "/receive_messages", json=data
     )
     print(response)
 

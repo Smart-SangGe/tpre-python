@@ -2,7 +2,7 @@ import argparse
 import requests
 
 def send_post_request(ip_addr, message_name):
-    url = f"http://localhost:8002/request_message/?i_m"
+    url = f"http://localhost:8002/request_message"
     data = {
         "dest_ip": ip_addr,
         "message_name": message_name

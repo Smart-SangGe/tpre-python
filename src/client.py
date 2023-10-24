@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import socket
 import random
 import time
+import base64
 
 
 @asynccontextmanager
@@ -199,14 +200,14 @@ async def send_messages(
     capsule_ct = Encrypt(pk, message)  # type: ignore
 
     for i in range(len(node_ips)):
-        url = "http://" + node_ips[i][0] + ":8001" + "/user_src?message"
-        print(url)
+        url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
-            "capsule_ct": capsule_ct,
+            "capsule_ct": base64.b64encode(str(capsule_ct)),
             "rk": rk_list[i],
         }
+        print(payload)
         response = requests.post(url, json=payload)
 
         if response.status_code == 200:
@@ -235,7 +236,7 @@ async def request_message(i_m: Request_Message):
     message_name = i_m.message_name
     source_ip = get_own_ip()
     dest_port = "8002"
-    url = "http://" + dest_ip + ":" + dest_port + "/recieve_request?i_m"
+    url = "http://" + dest_ip + ":" + dest_port + "/recieve_request"
     payload = {
         "dest_ip": dest_ip,
         "message_name": message_name,
