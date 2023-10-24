@@ -106,9 +106,7 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
     data = {"Tuple": re_message, "ip": source_ip}  # 类型不匹配
 
     # 发送 HTTP POST 请求
-    response = requests.post(
-        "http://" + dest_ip + "/receive_messages?message", json=data
-    )
+    response = requests.post("http://" + dest_ip + "/receive_messages", json=data)
     print(response)
 
 
