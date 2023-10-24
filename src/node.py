@@ -33,7 +33,7 @@ def send_ip():
     url = server_address + "/get_node?ip=" + ip
     # ip = get_local_ip() # type: ignore
     global id
-    id = requests.get(url,timeout=3)
+    id = requests.get(url, timeout=3)
 
 
 # 用环境变量获取本机ip
@@ -63,7 +63,7 @@ async def send_heartbeat_internal() -> None:
     while True:
         # print('successful send my_heart')
         try:
-            folderol = requests.get(url,timeout=3)
+            folderol = requests.get(url, timeout=3)
         except:
             print("Central server error")
 
@@ -108,4 +108,4 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=False)
