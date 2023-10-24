@@ -319,7 +319,7 @@ def get_own_ip() -> str:
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
     url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
-    response = requests.get(url)
+    response = requests.get(url,timeout=3)
     # Checking the response
     if response.status_code == 200:
         print("Success get node list")
