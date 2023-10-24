@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://10.20.14.232:8000/server"
+server_address = "http://110.41.155.96:8000/server"
 id = 0
 ip = ""
 client_ip_src = ""  # 发送信息用户的ip
