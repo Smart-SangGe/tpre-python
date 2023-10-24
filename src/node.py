@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://10.20.14.232:8000/server"
+server_address = "http://110.41.155.96:8000/server"
 id = 0
 ip = ""
 client_ip_src = ""  # 发送信息用户的ip
@@ -108,4 +108,4 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=False)
