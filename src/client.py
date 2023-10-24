@@ -112,8 +112,8 @@ async def receive_messages(message: C):
     return:
     status_code
     """
-    C_tuple = message.Tuple
-
+    a,b = message.Tuple
+    C_tuple = (a, b.to_bytes(32))
     ip = message.ip
     if not C_tuple or not ip:
         raise HTTPException(status_code=400, detail="Invalid input data")

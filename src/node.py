@@ -98,7 +98,8 @@ async def user_src(message: Req):
     capsule_ct = (capsule, ct.to_bytes(32))
     rk = message.rk
 
-    processed_message = ReEncrypt(rk, capsule_ct)
+    a, b = ReEncrypt(rk, capsule_ct)
+    processed_message = (a, int.from_bytes(b))
     await send_user_des_message(source_ip, dest_ip, processed_message)
     return HTTPException(status_code=200, detail="message recieved")
 
