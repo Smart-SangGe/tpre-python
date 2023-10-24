@@ -244,6 +244,7 @@ async def request_message(i_m: Request_Message):
     }
     try:
         response = requests.post(url, json=payload, timeout=3)
+        print(response.text)
 
     except:
         print("can't post")
