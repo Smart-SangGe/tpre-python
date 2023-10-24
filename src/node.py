@@ -33,7 +33,7 @@ def send_ip():
     url = server_address + "/get_node?ip=" + ip
     # ip = get_local_ip() # type: ignore
     global id
-    id = requests.get(url,timeout=3)
+    id = requests.get(url, timeout=3)
 
 
 # 用环境变量获取本机ip
@@ -63,10 +63,10 @@ async def send_heartbeat_internal() -> None:
     while True:
         # print('successful send my_heart')
         try:
-            folderol = requests.get(url,timeout=3)
+            folderol = requests.get(url, timeout=3)
         except:
             print("Central server error")
-        
+
         # 删除超时的节点（假设你有一个异步的数据库操作函数）
         await asyncio.sleep(timeout)
 
