@@ -5,6 +5,7 @@ import socket
 import asyncio
 from pydantic import BaseModel
 from tpre import *
+import os
 
 
 @asynccontextmanager
@@ -35,22 +36,14 @@ def send_ip():
     id = requests.get(url)
 
 
-# 用socket获取本机ip
+# 用环境变量获取本机ip
 def get_local_ip():
-    # 创建一个套接字对象
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # 连接到一个外部的服务器，这将自动绑定到本地IP地址
-    s.connect(("8.8.8.8", 80))
-    # 获取本地IP地址
-    local_ip = s.getsockname()[0]
-    s.close()
     global ip
-    ip = local_ip
+    ip = os.environ.get("HOST_IP", "IP not set")
 
 
 def init():
-    # get_local_ip()
-    global id
+    get_local_ip()
     send_ip()
     task = asyncio.create_task(send_heartbeat_internal())
     print("Finish init")
