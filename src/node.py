@@ -5,6 +5,7 @@ import socket
 import asyncio
 from pydantic import BaseModel
 from tpre import *
+import os
 
 
 @asynccontextmanager
@@ -17,7 +18,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 server_address = "http://10.20.14.232:8000/server"
 id = 0
-ip = "10.16.21.163"
+ip = ""
 client_ip_src = ""  # 发送信息用户的ip
 client_ip_des = ""  # 接收信息用户的ip
 processed_message = ()  # 重加密后的数据
@@ -35,22 +36,14 @@ def send_ip():
     id = requests.get(url)
 
 
-# 用socket获取本机ip
+# 用环境变量获取本机ip
 def get_local_ip():
-    # 创建一个套接字对象
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # 连接到一个外部的服务器，这将自动绑定到本地IP地址
-    s.connect(("8.8.8.8", 80))
-    # 获取本地IP地址
-    local_ip = s.getsockname()[0]
-    s.close()
     global ip
-    ip = local_ip
+    ip = os.environ.get("HOST_IP", "IP not set")
 
 
 def init():
-    # get_local_ip()
-    global id
+    get_local_ip()
     send_ip()
     task = asyncio.create_task(send_heartbeat_internal())
     print("Finish init")
