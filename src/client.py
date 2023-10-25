@@ -10,6 +10,7 @@ import socket
 import random
 import time
 import base64
+import json
 
 
 @asynccontextmanager
@@ -97,7 +98,7 @@ async def read_root():
 
 
 class C(BaseModel):
-    Tuple: Tuple[capsule, int]
+    Tuple: Tuple[Tuple[Tuple[int, int], Tuple[int, int], int, Tuple[int, int]], int]
     ip: str
 
 
@@ -209,7 +210,7 @@ async def send_messages(
             "ct": int.from_bytes(ct),
             "rk": rk_list[i],
         }
-        print(payload)
+        print(json.dumps(payload))
         response = requests.post(url, json=payload)
 
         if response.status_code == 200:
