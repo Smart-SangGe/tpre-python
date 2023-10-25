@@ -166,7 +166,16 @@ async def check_merge(ct: int, ip: str):
         # [(capsule, ct), ...]
         cfrag_cts = cursor.fetchall()
 
-        print("ip", type(ip))
+        cursor = db.execute(
+            """
+        SELECT publickey, threshold 
+        FROM senderinfo
+        WHERE ip = ?
+        """,
+            ('127.1.1'),
+        )
+        result = cursor.fetchall()
+        
         # get T
         cursor = db.execute(
             """
