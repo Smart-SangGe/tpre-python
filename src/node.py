@@ -76,7 +76,8 @@ async def send_heartbeat_internal() -> None:
 class Req(BaseModel):
     source_ip: str
     dest_ip: str
-    capsule_ct: Tuple[capsule, int]
+    capsule: capsule
+    ct: int
     rk: Any
 
 
@@ -94,7 +95,8 @@ async def user_src(message: Req):
     """
     source_ip = message.source_ip
     dest_ip = message.dest_ip
-    capsule, ct = message.capsule_ct
+    capsule = message.capsule
+    ct = message.ct
     capsule_ct = (capsule, ct.to_bytes(32))
     rk = message.rk
 

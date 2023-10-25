@@ -112,8 +112,8 @@ async def receive_messages(message: C):
     return:
     status_code
     """
-    a,b = message.Tuple
-    C_tuple = (a, b.to_bytes(32))
+    a, b = message.Tuple
+    C_tuple = (a, b)
     ip = message.ip
     if not C_tuple or not ip:
         raise HTTPException(status_code=400, detail="Invalid input data")
@@ -198,14 +198,15 @@ async def send_messages(
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
 
     capsule, ct = Encrypt(pk, message)  # type: ignore
-    capsule_ct = (capsule, int.from_bytes(ct))
+    #capsule_ct = (capsule, int.from_bytes(ct))
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
-            "capsule_ct": capsule_ct,
+            "capsule": capsule,
+            "ct": int.from_bytes(ct),
             "rk": rk_list[i],
         }
         print(payload)
