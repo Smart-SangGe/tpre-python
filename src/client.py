@@ -114,19 +114,22 @@ async def receive_messages(message: C):
     return:
     status_code
     """
-    
+
     if not message.Tuple or not message.ip:
         raise HTTPException(status_code=400, detail="Invalid input data")
 
     C_capsule, C_ct = message.Tuple
     ip = message.ip
-    
+
     # Serialization
     bin_C_capsule = pickle.dumps(C_capsule)
 
     # insert record into database
     with sqlite3.connect("client.db") as db:
         try:
+            print("bin:", bin_C_capsule)
+            print("ct:", C_ct)
+            print("ip:", ip)
             db.execute(
                 """
                 INSERT INTO message 
@@ -134,7 +137,7 @@ async def receive_messages(message: C):
                 VALUES 
                 (?, ?, ?)
                 """,
-                (bin_C_capsule, C_ct, ip),
+                (bin_C_capsule, str(C_ct), ip),
             )
             db.commit()
             await check_merge(C_ct, ip)
@@ -149,6 +152,8 @@ async def receive_messages(message: C):
 async def check_merge(ct: int, ip: str):
     global sk, pk, node_response, message
     with sqlite3.connect("client.db") as db:
+        print("str(ct):", str(ct))
+        print("ip:", ip)
         # Check if the combination of ct_column and ip_column appears more than once.
         cursor = db.execute(
             """
@@ -156,21 +161,23 @@ async def check_merge(ct: int, ip: str):
         FROM message  
         WHERE ct = ? AND senderip = ?
         """,
-            (ct, ip),
+            (str(ct), ip),
         )
         # [(capsule, ct), ...]
         cfrag_cts = cursor.fetchall()
 
+        print("ip", type(ip))
         # get T
         cursor = db.execute(
             """
         SELECT publickey, threshold 
         FROM senderinfo
-        WHERE senderip = ?
+        WHERE ip = ?
         """,
             (ip),
         )
         result = cursor.fetchall()
+        print("maybe error here?")
         pk_sender, T = result[0]  # result[0] = (pk, threshold)
 
     if len(cfrag_cts) >= T:
@@ -178,8 +185,8 @@ async def check_merge(ct: int, ip: str):
         temp_cfrag_cts = []
         for i in cfrag_cts:
             capsule = pickle.loads(i[0])
-            temp_cfrag_cts.append((capsule, i[1]))
-            
+            temp_cfrag_cts.append((capsule, int(i[1])))
+
         cfrags = mergecfrag(temp_cfrag_cts)
         message = DecryptFrags(sk, pk, pk_sender, cfrags)  # type: ignore
         node_response = True
@@ -258,20 +265,6 @@ async def request_message(i_m: Request_Message):
     except:
         print("can't post")
         return {"message": "can't post"}
-    if response.status_code == 200:
-        data = response.json()
-        public_key = int(data["public_key"])
-        threshold = int(data["threshold"])
-        with sqlite3.connect("client.db") as db:
-            db.execute(
-                """
-        INSERT INTO senderinfo
-        (public_key, threshold)
-        VALUES
-        (?, ?)
-        """,
-                (public_key, threshold),
-            )
 
     try:
         if response.status_code == 200:
@@ -283,11 +276,11 @@ async def request_message(i_m: Request_Message):
                 db.execute(
                     """
             INSERT INTO senderinfo
-            (public_key, threshold)
+            (ip, public_key, threshold)
             VALUES
-            (?, ?)
+            (?, ?, ?)
             """,
-                    (public_key, threshold),
+                    (str(dest_ip), public_key, threshold),
                 )
     except:
         print("Database error")

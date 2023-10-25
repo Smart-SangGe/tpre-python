@@ -16,13 +16,31 @@ jobs:
 
 
     - name: copy file via ssh password
-      uses: appleboy/scp-action@v0.1.4
+      uses: cross-the-world/scp-pipeline@master
       with:
-        host: "110.41.155.96,110.41.130.197,110.41.21.35"
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
-        source: "src/server.py,src/client.py,src/node.py"
-        target: "/root/mimajingsai/src/"          
+        host: "110.41.155.96"
+        user: ${{ secrets.USERNAME }}
+        pass: ${{ secrets.PASSWORD }}
+        local: "src/*"
+        remote: /root/mimajingsai/src/   
+
+    - name: copy file via ssh password
+      uses: cross-the-world/scp-pipeline@master
+      with:
+        host: "110.41.130.197"
+        user: ${{ secrets.USERNAME }}
+        pass: ${{ secrets.PASSWORD }}
+        local: "src/*"
+        remote: /root/mimajingsai/src/ 
+
+    - name: copy file via ssh password
+      uses: cross-the-world/scp-pipeline@master
+      with:
+        host: "110.41.21.35"
+        user: ${{ secrets.USERNAME }}
+        pass: ${{ secrets.PASSWORD }}
+        local: "src/*"
+        remote: /root/mimajingsai/src/ 
 
 
       
