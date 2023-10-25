@@ -76,8 +76,9 @@ async def send_heartbeat_internal() -> None:
 class Req(BaseModel):
     source_ip: str
     dest_ip: str
-    capsule_ct: Tuple[capsule, int]
-    rk: Any
+    capsule: capsule
+    ct: int
+    rk: list
 
 
 @app.post("/user_src")  # 接收用户1发送的信息
@@ -92,9 +93,11 @@ async def user_src(message: Req):
             "rk": rk_list[i],
         }
     """
+    print("node: ", message)
     source_ip = message.source_ip
     dest_ip = message.dest_ip
-    capsule, ct = message.capsule_ct
+    capsule = message.capsule
+    ct = message.ct
     capsule_ct = (capsule, ct.to_bytes(32))
     rk = message.rk
 
@@ -111,7 +114,7 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
     response = requests.post(
         "http://" + dest_ip + ":8002" + "/receive_messages", json=data
     )
-    print(response.text)
+    print("send stauts:" ,response.text)
 
 
 if __name__ == "__main__":

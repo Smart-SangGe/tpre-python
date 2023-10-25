@@ -10,6 +10,8 @@ import socket
 import random
 import time
 import base64
+import json
+import pickle
 
 
 @asynccontextmanager
@@ -39,7 +41,7 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS message (
                 id INTEGER PRIMARY KEY,
-                capsule TEXT,
+                capsule BLOB,
                 ct TEXT,
                 senderip TEXT
             );
@@ -97,7 +99,7 @@ async def read_root():
 
 
 class C(BaseModel):
-    Tuple: Tuple[capsule, int]
+    Tuple: Tuple[Tuple[Tuple[int, int], Tuple[int, int], int, Tuple[int, int]], int]
     ip: str
 
 
@@ -112,29 +114,30 @@ async def receive_messages(message: C):
     return:
     status_code
     """
-    a,b = message.Tuple
-    C_tuple = (a, b.to_bytes(32))
-    ip = message.ip
-    if not C_tuple or not ip:
+
+    if not message.Tuple or not message.ip:
         raise HTTPException(status_code=400, detail="Invalid input data")
 
-    C_capsule = C_tuple[0]
-    C_ct = C_tuple[1]
+    C_capsule, C_ct = message.Tuple
+    ip = message.ip
 
-    if not Checkcapsule(C_capsule):
-        raise HTTPException(status_code=400, detail="Invalid capsule")
+    # Serialization
+    bin_C_capsule = pickle.dumps(C_capsule)
 
     # insert record into database
-    with sqlite3.connect("message.db") as db:
+    with sqlite3.connect("client.db") as db:
         try:
+            print("bin:", bin_C_capsule)
+            print("ct:", C_ct)
+            print("ip:", ip)
             db.execute(
                 """
                 INSERT INTO message 
-                (capsule_column, ct_column, ip_column) 
+                (capsule, ct, senderip) 
                 VALUES 
                 (?, ?, ?)
                 """,
-                (C_capsule, C_ct, ip),
+                (bin_C_capsule, str(C_ct), ip),
             )
             db.commit()
             await check_merge(C_ct, ip)
@@ -149,6 +152,8 @@ async def receive_messages(message: C):
 async def check_merge(ct: int, ip: str):
     global sk, pk, node_response, message
     with sqlite3.connect("client.db") as db:
+        print("str(ct):", str(ct))
+        print("ip:", ip)
         # Check if the combination of ct_column and ip_column appears more than once.
         cursor = db.execute(
             """
@@ -156,25 +161,42 @@ async def check_merge(ct: int, ip: str):
         FROM message  
         WHERE ct = ? AND senderip = ?
         """,
-            (ct, ip),
+            (str(ct), ip),
         )
         # [(capsule, ct), ...]
         cfrag_cts = cursor.fetchall()
 
+        cursor = db.execute(
+            """
+        SELECT publickey, threshold 
+        FROM senderinfo
+        WHERE ip = ?
+        """,
+            ('127.1.1'),
+        )
+        result = cursor.fetchall()
+        
         # get T
         cursor = db.execute(
             """
         SELECT publickey, threshold 
         FROM senderinfo
-        WHERE senderip = ?
+        WHERE ip = ?
         """,
             (ip),
         )
         result = cursor.fetchall()
+        print("maybe error here?")
         pk_sender, T = result[0]  # result[0] = (pk, threshold)
 
     if len(cfrag_cts) >= T:
-        cfrags = mergecfrag(cfrag_cts)
+        # Deserialization
+        temp_cfrag_cts = []
+        for i in cfrag_cts:
+            capsule = pickle.loads(i[0])
+            temp_cfrag_cts.append((capsule, int(i[1])))
+
+        cfrags = mergecfrag(temp_cfrag_cts)
         message = DecryptFrags(sk, pk, pk_sender, cfrags)  # type: ignore
         node_response = True
 
@@ -198,17 +220,18 @@ async def send_messages(
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
 
     capsule, ct = Encrypt(pk, message)  # type: ignore
-    capsule_ct = (capsule, int.from_bytes(ct))
+    # capsule_ct = (capsule, int.from_bytes(ct))
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
-            "capsule_ct": capsule_ct,
+            "capsule": capsule,
+            "ct": int.from_bytes(ct),
             "rk": rk_list[i],
         }
-        print(payload)
+        print(json.dumps(payload))
         response = requests.post(url, json=payload)
 
         if response.status_code == 200:
@@ -251,20 +274,6 @@ async def request_message(i_m: Request_Message):
     except:
         print("can't post")
         return {"message": "can't post"}
-    if response.status_code == 200:
-        data = response.json()
-        public_key = int(data["public_key"])
-        threshold = int(data["threshold"])
-        with sqlite3.connect("client.db") as db:
-            db.execute(
-                """
-        INSERT INTO senderinfo
-        (public_key, threshold)
-        VALUES
-        (?, ?)
-        """,
-                (public_key, threshold),
-            )
 
     try:
         if response.status_code == 200:
@@ -276,11 +285,11 @@ async def request_message(i_m: Request_Message):
                 db.execute(
                     """
             INSERT INTO senderinfo
-            (public_key, threshold)
+            (ip, public_key, threshold)
             VALUES
-            (?, ?)
+            (?, ?, ?)
             """,
-                    (public_key, threshold),
+                    (str(dest_ip), public_key, threshold),
                 )
     except:
         print("Database error")
