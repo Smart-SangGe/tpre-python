@@ -6,6 +6,8 @@ import asyncio
 from pydantic import BaseModel
 from tpre import *
 import os
+from typing import Any, Tuple
+import base64
 
 
 @asynccontextmanager
@@ -33,7 +35,7 @@ def send_ip():
     url = server_address + "/get_node?ip=" + ip
     # ip = get_local_ip() # type: ignore
     global id
-    id = requests.get(url,timeout=3)
+    id = requests.get(url, timeout=3)
 
 
 # 用环境变量获取本机ip
@@ -63,16 +65,23 @@ async def send_heartbeat_internal() -> None:
     while True:
         # print('successful send my_heart')
         try:
-            folderol = requests.get(url,timeout=3)
+            folderol = requests.get(url, timeout=3)
         except:
             print("Central server error")
-        
+
         # 删除超时的节点（假设你有一个异步的数据库操作函数）
         await asyncio.sleep(timeout)
 
 
+class Req(BaseModel):
+    source_ip: str
+    dest_ip: str
+    capsule_ct: Tuple[capsule, int]
+    rk: Any
+
+
 @app.post("/user_src")  # 接收用户1发送的信息
-async def receive_user_src_message(message: Request):
+async def user_src(message: Req):
     global client_ip_src, client_ip_des
     # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
     """
@@ -83,14 +92,14 @@ async def receive_user_src_message(message: Request):
             "rk": rk_list[i],
         }
     """
+    source_ip = message.source_ip
+    dest_ip = message.dest_ip
+    capsule, ct = message.capsule_ct
+    capsule_ct = (capsule, ct.to_bytes(32))
+    rk = message.rk
 
-    data = await message.json()
-    source_ip = data.get("source_ip")
-    dest_ip = data.get("dest_ip")
-    capsule_ct = data.get("capsule_ct")
-    rk = data.get("rk")
-
-    processed_message = ReEncrypt(rk, capsule_ct)
+    a, b = ReEncrypt(rk, capsule_ct)
+    processed_message = (a, int.from_bytes(b))
     await send_user_des_message(source_ip, dest_ip, processed_message)
     return HTTPException(status_code=200, detail="message recieved")
 
@@ -100,12 +109,12 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 
     # 发送 HTTP POST 请求
     response = requests.post(
-        "http://" + dest_ip + "/receive_messages?message", json=data
+        "http://" + dest_ip + ":8002" + "/receive_messages", json=data
     )
-    print(response)
+    print(response.text)
 
 
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=False)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)

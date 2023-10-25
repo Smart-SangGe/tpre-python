@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import socket
 import random
 import time
+import base64
 
 
 @asynccontextmanager
@@ -28,7 +29,6 @@ def init():
 
     # load config from config file
     init_config()
-
     get_node_list(2, server_address)  # type: ignore
 
 
@@ -84,6 +84,9 @@ def init_config():
 
 # execute on exit
 def clean_env():
+    with sqlite3.connect("client.db") as db:
+        db.execute("DELETE FROM node")
+        db.commit()
     print("Exit app")
 
 
@@ -97,6 +100,7 @@ class C(BaseModel):
     Tuple: Tuple[capsule, int]
     ip: str
 
+
 # receive messages from nodes
 @app.post("/receive_messages")
 async def receive_messages(message: C):
@@ -108,8 +112,8 @@ async def receive_messages(message: C):
     return:
     status_code
     """
-    C_tuple = message.Tuple
-
+    a,b = message.Tuple
+    C_tuple = (a, b.to_bytes(32))
     ip = message.ip
     if not C_tuple or not ip:
         raise HTTPException(status_code=400, detail="Invalid input data")
@@ -145,7 +149,7 @@ async def receive_messages(message: C):
 async def check_merge(ct: int, ip: str):
     global sk, pk, node_response, message
     with sqlite3.connect("client.db") as db:
-    # Check if the combination of ct_column and ip_column appears more than once.
+        # Check if the combination of ct_column and ip_column appears more than once.
         cursor = db.execute(
             """
         SELECT capsule, ct 
@@ -167,8 +171,8 @@ async def check_merge(ct: int, ip: str):
             (ip),
         )
         result = cursor.fetchall()
-        pk_sender, T = result[0] # result[0] = (pk, threshold)
-        
+        pk_sender, T = result[0]  # result[0] = (pk, threshold)
+
     if len(cfrag_cts) >= T:
         cfrags = mergecfrag(cfrag_cts)
         message = DecryptFrags(sk, pk, pk_sender, cfrags)  # type: ignore
@@ -181,29 +185,32 @@ async def send_messages(
 ):
     global pk, sk
     id_list = []
+
     # calculate id of nodes
     for node_ip in node_ips:
+        node_ip = node_ip[0]
         ip_parts = node_ip.split(".")
         id = 0
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
-    
     # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
-    
-    capsule_ct = Encrypt(pk, message)  # type: ignore
+
+    capsule, ct = Encrypt(pk, message)  # type: ignore
+    capsule_ct = (capsule, int.from_bytes(ct))
 
     for i in range(len(node_ips)):
-        url = "http://" + node_ips[i] + ":8001" + "/user_src?message"
-
+        url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
         payload = {
             "source_ip": local_ip,
             "dest_ip": dest_ip,
             "capsule_ct": capsule_ct,
             "rk": rk_list[i],
         }
+        print(payload)
         response = requests.post(url, json=payload)
+
         if response.status_code == 200:
             print(f"send to {node_ips[i]} successful")
     return 0
@@ -229,8 +236,8 @@ async def request_message(i_m: Request_Message):
     # dest_ip = dest_ip.split(":")[0]
     message_name = i_m.message_name
     source_ip = get_own_ip()
-    dest_port = "8003"
-    url = "http://" + dest_ip + ":" + dest_port + "/recieve_request?i_m"
+    dest_port = "8002"
+    url = "http://" + dest_ip + ":" + dest_port + "/recieve_request"
     payload = {
         "dest_ip": dest_ip,
         "message_name": message_name,
@@ -238,17 +245,33 @@ async def request_message(i_m: Request_Message):
         "pk": pk,
     }
     try:
-        response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=3)
+        print(response.text)
 
     except:
         print("can't post")
         return {"message": "can't post"}
+    if response.status_code == 200:
+        data = response.json()
+        public_key = int(data["public_key"])
+        threshold = int(data["threshold"])
+        with sqlite3.connect("client.db") as db:
+            db.execute(
+                """
+        INSERT INTO senderinfo
+        (public_key, threshold)
+        VALUES
+        (?, ?)
+        """,
+                (public_key, threshold),
+            )
 
     try:
         if response.status_code == 200:
             data = response.json()
             public_key = int(data["public_key"])
             threshold = int(data["threshold"])
+            print(data)
             with sqlite3.connect("client.db") as db:
                 db.execute(
                     """
@@ -264,10 +287,10 @@ async def request_message(i_m: Request_Message):
         return {"message": "Database Error"}
 
     # wait 10s to recieve message from nodes
-    for _ in range(10):
+    for _ in range(3):
         if node_response:
             data = message
-            
+
             # reset message and node_response
             message = b""
             node_response = False
@@ -286,7 +309,8 @@ async def recieve_request(i_m: IP_Message):
     if source_ip != i_m.dest_ip:
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
-    threshold = random.randrange(1, 2)
+    # threshold = random.randrange(1, 2)
+    threshold = 2
     own_public_key = pk
     pk_B = i_m.pk
 
@@ -300,18 +324,18 @@ async def recieve_request(i_m: IP_Message):
             (threshold,),
         )
         node_ips = cursor.fetchall()
-        
+
     # message name
     message = b"hello world" + random.randbytes(8)
-    
+
     # send message to nodes
-    await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)  
+    await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)
     response = {"threshold": threshold, "public_key": own_public_key}
+    print("###############RESPONSE = ", response)
     return response
 
 
 def get_own_ip() -> str:
-    
     ip = os.environ.get("HOST_IP", "IP not set")
     return ip
 
@@ -319,7 +343,7 @@ def get_own_ip() -> str:
 # get node list from central server
 def get_node_list(count: int, server_addr: str):
     url = "http://" + server_addr + "/server/send_nodes_list?count=" + str(count)
-    response = requests.get(url,timeout=3)
+    response = requests.get(url, timeout=3)
     # Checking the response
     if response.status_code == 200:
         print("Success get node list")
