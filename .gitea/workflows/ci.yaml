@@ -23,7 +23,7 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
         source: "src/server.py,src/client.py,src/node.py"
-        target: /root/mimajingsai/src/           
+        target: "/root/mimajingsai/src/"          
 
 
       
