@@ -341,7 +341,7 @@ def Checkcapsule(capsule: capsule) -> bool:  # 验证胶囊的有效性
     return flag
 
 
-def ReEncapsulate(kFrag: list, capsule: capsule) -> Tuple[point, point, int, point]:
+def ReEncapsulate(kFrag: tuple, capsule: capsule) -> Tuple[point, point, int, point]:
     id, rk, Xa, U1 = kFrag
     E, V, s = capsule
     if not Checkcapsule(capsule):
@@ -355,7 +355,7 @@ def ReEncapsulate(kFrag: list, capsule: capsule) -> Tuple[point, point, int, poi
 
 
 def ReEncrypt(
-    kFrag: list, C: Tuple[capsule, bytes]
+    kFrag: tuple, C: Tuple[capsule, bytes]
 ) -> Tuple[Tuple[point, point, int, point], bytes]:
     capsule, enc_Data = C
 
