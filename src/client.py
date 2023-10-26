@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from fastapi import FastAPI, HTTPException
 import requests
 import os
@@ -497,3 +498,5 @@ if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
     uvicorn.run("client:app", host="0.0.0.0", port=8002, reload=True, log_level="debug")
+=======
+>>>>>>> parent of 7b6e456 (feat: init client)
