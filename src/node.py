@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://110.41.155.96:8000/server"
+server_address = "http://60.204.236.38:8000/server"
 id = 0
 ip = ""
 client_ip_src = ""  # 发送信息用户的ip
@@ -59,7 +59,7 @@ def clear():
 
 
 async def send_heartbeat_internal() -> None:
-    timeout = 3
+    timeout = 30
     global ip
     url = server_address + "/heartbeat?ip=" + ip
     while True:
@@ -120,4 +120,4 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True,log_level="debug")
