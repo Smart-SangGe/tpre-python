@@ -123,7 +123,7 @@ async def receive_messages(message: C):
     status_code
     """
     print(f"Received message: {message}")
-    
+
     if not message.Tuple or not message.ip:
         print("Invalid input data received.")
         raise HTTPException(status_code=400, detail="Invalid input data")
@@ -133,7 +133,6 @@ async def receive_messages(message: C):
 
     # Serialization
     bin_C_capsule = pickle.dumps(C_capsule)
-    
 
     # insert record into database
     with sqlite3.connect("client.db") as db:
@@ -235,11 +234,13 @@ async def send_messages(
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
+    print(f"Calculated IDs: {id_list}")
     # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
-
+    print(f"Generated ReKey list: {rk_list}")
     capsule, ct = Encrypt(pk, message)  # type: ignore
     # capsule_ct = (capsule, int.from_bytes(ct))
+    print(f"Encrypted message to capsule={capsule}, ct={ct}")
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
@@ -250,11 +251,15 @@ async def send_messages(
             "ct": int.from_bytes(ct),
             "rk": rk_list[i],
         }
-        print(json.dumps(payload))
+        print(f"Sending payload to {url}: {json.dumps(payload)}")
         response = requests.post(url, json=payload)
 
         if response.status_code == 200:
             print(f"send to {node_ips[i]} successful")
+        else:
+            print(
+                f"Failed to send to {node_ips[i]}. Response code: {response.status_code}, Response text: {response.text}"
+            )
     return 0
 
 
