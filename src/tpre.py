@@ -272,7 +272,9 @@ def f(x: int, f_modulus: list, T: int) -> int:
     return res
 
 
-def GenerateReKey(sk_A: int, pk_B: point, N: int, T: int, id_tuple: Tuple[int,...]) -> list:
+def GenerateReKey(
+    sk_A: int, pk_B: point, N: int, T: int, id_tuple: Tuple[int, ...]
+) -> list:
     """
     param:
     skA, pkB, N(节点总数), T(阈值)
