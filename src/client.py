@@ -12,6 +12,8 @@ import time
 import base64
 import json
 import pickle
+from fastapi.responses import JSONResponse
+
 
 
 @asynccontextmanager
@@ -64,7 +66,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS senderinfo (
                 id INTEGER PRIMARY KEY,
                 ip TEXT,
-                publickey TEXT,
+                pkx TEXT,
+                pky TEXT,
                 threshold INTEGER
             )
             """
@@ -88,6 +91,7 @@ def init_config():
 def clean_env():
     with sqlite3.connect("client.db") as db:
         db.execute("DELETE FROM node")
+        db.execute("DELETE FROM message")
         db.commit()
     print("Exit app")
 
@@ -127,9 +131,6 @@ async def receive_messages(message: C):
     # insert record into database
     with sqlite3.connect("client.db") as db:
         try:
-            print("bin:", bin_C_capsule)
-            print("ct:", C_ct)
-            print("ip:", ip)
             db.execute(
                 """
                 INSERT INTO message 
@@ -151,9 +152,15 @@ async def receive_messages(message: C):
 # check record count
 async def check_merge(ct: int, ip: str):
     global sk, pk, node_response, message
+    """
+    CREATE TABLE IF NOT EXISTS senderinfo (
+        id INTEGER PRIMARY KEY,
+        ip TEXT,
+        publickey TEXT,
+        threshold INTEGER
+    )
+    """
     with sqlite3.connect("client.db") as db:
-        print("str(ct):", str(ct))
-        print("ip:", ip)
         # Check if the combination of ct_column and ip_column appears more than once.
         cursor = db.execute(
             """
@@ -166,16 +173,6 @@ async def check_merge(ct: int, ip: str):
         # [(capsule, ct), ...]
         cfrag_cts = cursor.fetchall()
 
-        cursor = db.execute(
-            """
-        SELECT publickey, threshold 
-        FROM senderinfo
-        WHERE ip = ?
-        """,
-            ('127.1.1'),
-        )
-        result = cursor.fetchall()
-        
         # get T
         cursor = db.execute(
             """
@@ -183,13 +180,16 @@ async def check_merge(ct: int, ip: str):
         FROM senderinfo
         WHERE ip = ?
         """,
-            (ip),
+            (ip,),
         )
         result = cursor.fetchall()
-        print("maybe error here?")
-        pk_sender, T = result[0]  # result[0] = (pk, threshold)
+        try:
+            pk_sender, T = result[0]  # result[0] = (pk, threshold)
+        except:
+            pk_sender, T = 0, -1
 
-    if len(cfrag_cts) >= T:
+    if len(cfrag_cts) <= T:
+        print(T)
         # Deserialization
         temp_cfrag_cts = []
         for i in cfrag_cts:
@@ -260,7 +260,7 @@ async def request_message(i_m: Request_Message):
     message_name = i_m.message_name
     source_ip = get_own_ip()
     dest_port = "8002"
-    url = "http://" + dest_ip + ":" + dest_port + "/recieve_request"
+    url = "http://" + dest_ip + ":" + dest_port + "/receive_request"
     payload = {
         "dest_ip": dest_ip,
         "message_name": message_name,
@@ -268,19 +268,25 @@ async def request_message(i_m: Request_Message):
         "pk": pk,
     }
     try:
-        response = requests.post(url, json=payload, timeout=3)
-        print(response.text)
+        response = requests.post(url, json=payload, timeout=1)
+        # print("menxian and pk", response.text)
 
-    except:
+    except requests.Timeout:
         print("can't post")
-        return {"message": "can't post"}
+        # content = {"message": "post timeout", "error": str(e)}
+        # return JSONResponse(content, status_code=400)
 
     try:
+        url = "http://" + dest_ip + ":" + dest_port + "/get_pk"
+        print(url)
+        response = requests.get(url,timeout=4)
+        print(response.text)
         if response.status_code == 200:
             data = response.json()
-            public_key = int(data["public_key"])
-            threshold = int(data["threshold"])
-            print(data)
+            pkx = int(data["pkx"])
+            pky = int(data["pky"])
+            public_key = (pkx, pky)
+            threshold = 2
             with sqlite3.connect("client.db") as db:
                 db.execute(
                     """
@@ -291,11 +297,12 @@ async def request_message(i_m: Request_Message):
             """,
                     (str(dest_ip), public_key, threshold),
                 )
-    except:
+    except Exception as e:
         print("Database error")
-        return {"message": "Database Error"}
+        content = {"message": "Database Error","error": str(e)}
+        return JSONResponse(content, status_code=400)
 
-    # wait 10s to recieve message from nodes
+    # wait 3s to receive message from nodes
     for _ in range(3):
         if node_response:
             data = message
@@ -307,12 +314,13 @@ async def request_message(i_m: Request_Message):
             # return message to frontend
             return {"message": data}
         time.sleep(1)
-    return {"message": "recieve timeout"}
+    content = {"message": "receive timeout"}
+    return JSONResponse(content, status_code=400)
 
 
-# recieve request from others
-@app.post("/recieve_request")
-async def recieve_request(i_m: IP_Message):
+# receive request from others
+@app.post("/receive_request")
+async def receive_request(i_m: IP_Message):
     global pk
     source_ip = get_own_ip()
     if source_ip != i_m.dest_ip:
@@ -373,6 +381,11 @@ def get_node_list(count: int, server_addr: str):
         print("Success add node ip")
     else:
         print("Failed:", response.status_code, response.text)
+        
+@app.get("/get_pk")
+async def get_pk():
+    global pk
+    return {"pkx": str(pk[0]), "pky": str(pk[1])}
 
 
 pk = point
@@ -385,4 +398,4 @@ local_ip = get_own_ip()
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("client:app", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("client:app", host="0.0.0.0", port=8002, reload=True,log_level="debug")
