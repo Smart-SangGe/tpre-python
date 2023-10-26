@@ -4,7 +4,7 @@
 
 /request_node
 get method
-pr  
+  
 
 
 docker run -it -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ~/mimajingsai:/app -e HOST_IP=110.41.130.197 git.mamahaha.work/sangge/tpre:base bash  

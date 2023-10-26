@@ -329,14 +329,20 @@ async def request_message(i_m: Request_Message):
 @app.post("/receive_request")
 async def receive_request(i_m: IP_Message):
     global pk
+    print(
+        f"Function 'receive_request' called with: dest_ip={i_m.dest_ip}, source_ip={i_m.source_ip}, pk={i_m.pk}"
+    )
     source_ip = get_own_ip()
+    print(f"Own IP: {source_ip}")
     if source_ip != i_m.dest_ip:
+        print("Mismatch in destination IP.")
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
     # threshold = random.randrange(1, 2)
     threshold = 2
     own_public_key = pk
     pk_B = i_m.pk
+    print(f"Using own public key: {own_public_key} and received public key: {pk_B}")
 
     with sqlite3.connect("client.db") as db:
         cursor = db.execute(
@@ -348,14 +354,16 @@ async def receive_request(i_m: IP_Message):
             (threshold,),
         )
         node_ips = cursor.fetchall()
+    print(f"Selected node IPs from database: {node_ips}")
 
     # message name
     message = b"hello world" + random.randbytes(8)
+    print(f"Generated message: {message}")
 
     # send message to nodes
     await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)
     response = {"threshold": threshold, "public_key": own_public_key}
-    print("###############RESPONSE = ", response)
+    print(f"Sending response: {response}")
     return response
 
 
