@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://110.41.155.96:8000/server"
+server_address = "http://60.204.236.38:8000/server"
 id = 0
 ip = ""
 client_ip_src = ""  # 发送信息用户的ip
@@ -114,7 +114,7 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
     response = requests.post(
         "http://" + dest_ip + ":8002" + "/receive_messages", json=data
     )
-    print("send stauts:" ,response.text)
+    print("send stauts:", response.text)
 
 
 if __name__ == "__main__":
