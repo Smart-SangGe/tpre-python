@@ -279,6 +279,9 @@ class Request_Message(BaseModel):
 @app.post("/request_message")
 async def request_message(i_m: Request_Message):
     global message, node_response, pk
+    print(
+        f"Function 'request_message' called with: dest_ip={i_m.dest_ip}, message_name={i_m.message_name}"
+    )
     dest_ip = i_m.dest_ip
     # dest_ip = dest_ip.split(":")[0]
     message_name = i_m.message_name
@@ -291,21 +294,25 @@ async def request_message(i_m: Request_Message):
         "source_ip": source_ip,
         "pk": pk,
     }
+    print(f"Sending request to {url} with payload: {payload}")
     try:
         response = requests.post(url, json=payload, timeout=1)
+        print(f"Response received from {url}: {response.text}")
         # print("menxian and pk", response.text)
 
     except requests.Timeout:
-        print("can't post")
+        print("Timeout error: can't post to the destination.")
+        # print("can't post")
         # content = {"message": "post timeout", "error": str(e)}
         # return JSONResponse(content, status_code=400)
 
     # wait 3s to receive message from nodes
     for _ in range(10):
-        print("wait:", node_response)
+        print(f"Waiting for node_response... Current value: {node_response}")
+        # print("wait:", node_response)
         if node_response:
             data = message
-
+            print(f"Node response received with message: {data}")
             # reset message and node_response
             message = b""
             node_response = False
@@ -313,6 +320,7 @@ async def request_message(i_m: Request_Message):
             # return message to frontend
             return {"message": str(data)}
         await asyncio.sleep(0.2)
+    print("Timeout while waiting for node_response.")
     content = {"message": "receive timeout"}
     return JSONResponse(content, status_code=400)
 
