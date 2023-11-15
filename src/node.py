@@ -36,6 +36,7 @@ def send_ip():
     # ip = get_local_ip() # type: ignore
     global id
     id = requests.get(url, timeout=3)
+    print("中心服务器返回节点ID为: ", id)
 
 
 # 用环境变量获取本机ip
@@ -84,7 +85,10 @@ class Req(BaseModel):
 @app.post("/user_src")  # 接收用户1发送的信息
 async def user_src(message: Req):
     global client_ip_src, client_ip_des
-    # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]  # 看梁俊勇
+    print(
+        f"Function 'user_src' called with: source_ip={message.source_ip}, dest_ip={message.dest_ip}, capsule={message.capsule}, ct={message.ct}, rk={message.rk}"
+    )
+    # kfrag , capsule_ct ,client_ip_src , client_ip_des   = json_data[]
     """
     payload = {
             "source_ip": local_ip,
@@ -100,10 +104,12 @@ async def user_src(message: Req):
     ct = message.ct
     capsule_ct = (capsule, ct.to_bytes(32))
     rk = message.rk
-
+    print(f"Computed capsule_ct: {capsule_ct}")
     a, b = ReEncrypt(rk, capsule_ct)
     processed_message = (a, int.from_bytes(b))
+    print(f"Re-encrypted message: {processed_message}")
     await send_user_des_message(source_ip, dest_ip, processed_message)
+    print("Message sent to destination user.")
     return HTTPException(status_code=200, detail="message recieved")
 
 
@@ -120,4 +126,4 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
 
-    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True,log_level="debug")
+    uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True, log_level="debug")
