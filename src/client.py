@@ -332,6 +332,8 @@ async def receive_request(i_m: IP_Message):
         node_ips = cursor.fetchall()
 
     # message name
+    # message_name = i_m.message_name
+    # message = xxxxx
     message = b"hello world" + random.randbytes(8)
 
     # send message to nodes
