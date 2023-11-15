@@ -65,9 +65,11 @@ async def get_node(ip: str) -> int:
     ip_int = 0
     for i in range(4):
         ip_int += int(ip_parts[i]) << (24 - (8 * i))
+    print("IP", ip, "对应的ID为", ip_int)
 
     # 获取当前时间
     current_time = int(time.time())
+    print("当前时间: ", current_time)
 
     # 插入数据
     cursor.execute(
@@ -102,6 +104,7 @@ async def delete_node(ip: str) -> None:
 # 接收节点心跳包
 @app.get("/server/heartbeat")
 async def receive_heartbeat(ip: str):
+    print("收到来自", ip, "的心跳包")
     cursor.execute(
         "UPDATE nodes SET last_heartbeat = ? WHERE ip = ?", (time.time(), ip)
     )
@@ -112,7 +115,9 @@ async def receive_heartbeat_internal():
     while 1:
         timeout = 70
         # 删除超时的节点
-        cursor.execute("DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,))
+        cursor.execute(
+            "DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,)
+        )
         conn.commit()
         await asyncio.sleep(timeout)
 
@@ -135,6 +140,8 @@ async def send_nodes_list(count: int) -> list:
         id, ip, last_heartbeat = row
         nodes_list.append(ip)
 
+    print("收到来自客户端的节点列表请求...")
+    print(nodes_list)
     return nodes_list
 
 

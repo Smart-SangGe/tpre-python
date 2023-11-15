@@ -95,6 +95,7 @@ def clean_env():
     with sqlite3.connect("client.db") as db:
         db.execute("DELETE FROM node")
         db.execute("DELETE FROM message")
+        db.execute("DELETE FROM senderinfo")
         db.commit()
     print("Exit app")
 
@@ -121,8 +122,10 @@ async def receive_messages(message: C):
     return:
     status_code
     """
+    print(f"Received message: {message}")
 
     if not message.Tuple or not message.ip:
+        print("Invalid input data received.")
         raise HTTPException(status_code=400, detail="Invalid input data")
 
     C_capsule, C_ct = message.Tuple
@@ -144,6 +147,7 @@ async def receive_messages(message: C):
                 (bin_C_capsule, str(C_ct), ip),
             )
             db.commit()
+            print("Data inserted successfully into database.")
             check_merge(C_ct, ip)
             return HTTPException(status_code=200, detail="Message received")
         except Exception as e:
@@ -211,7 +215,7 @@ def check_merge(ct: int, ip: str):
 
         print("merge success", message)
         node_response = True
-        
+
         print("merge:", node_response)
 
 
@@ -230,11 +234,13 @@ async def send_messages(
         for i in range(4):
             id += int(ip_parts[i]) << (24 - (8 * i))
         id_list.append(id)
+    print(f"Calculated IDs: {id_list}")
     # generate rk
     rk_list = GenerateReKey(sk, pk_B, len(node_ips), shreshold, tuple(id_list))  # type: ignore
-
+    print(f"Generated ReKey list: {rk_list}")
     capsule, ct = Encrypt(pk, message)  # type: ignore
     # capsule_ct = (capsule, int.from_bytes(ct))
+    print(f"Encrypted message to capsule={capsule}, ct={ct}")
 
     for i in range(len(node_ips)):
         url = "http://" + node_ips[i][0] + ":8001" + "/user_src"
@@ -245,11 +251,15 @@ async def send_messages(
             "ct": int.from_bytes(ct),
             "rk": rk_list[i],
         }
-        print(json.dumps(payload))
+        print(f"Sending payload to {url}: {json.dumps(payload)}")
         response = requests.post(url, json=payload)
 
         if response.status_code == 200:
             print(f"send to {node_ips[i]} successful")
+        else:
+            print(
+                f"Failed to send to {node_ips[i]}. Response code: {response.status_code}, Response text: {response.text}"
+            )
     return 0
 
 
@@ -269,6 +279,9 @@ class Request_Message(BaseModel):
 @app.post("/request_message")
 async def request_message(i_m: Request_Message):
     global message, node_response, pk
+    print(
+        f"Function 'request_message' called with: dest_ip={i_m.dest_ip}, message_name={i_m.message_name}"
+    )
     dest_ip = i_m.dest_ip
     # dest_ip = dest_ip.split(":")[0]
     message_name = i_m.message_name
@@ -281,21 +294,25 @@ async def request_message(i_m: Request_Message):
         "source_ip": source_ip,
         "pk": pk,
     }
+    print(f"Sending request to {url} with payload: {payload}")
     try:
         response = requests.post(url, json=payload, timeout=1)
+        print(f"Response received from {url}: {response.text}")
         # print("menxian and pk", response.text)
 
     except requests.Timeout:
-        print("can't post")
+        print("Timeout error: can't post to the destination.")
+        # print("can't post")
         # content = {"message": "post timeout", "error": str(e)}
         # return JSONResponse(content, status_code=400)
 
     # wait 3s to receive message from nodes
     for _ in range(10):
-        print("wait:", node_response)
+        print(f"Waiting for node_response... Current value: {node_response}")
+        # print("wait:", node_response)
         if node_response:
             data = message
-            
+            print(f"Node response received with message: {data}")
             # reset message and node_response
             message = b""
             node_response = False
@@ -303,6 +320,7 @@ async def request_message(i_m: Request_Message):
             # return message to frontend
             return {"message": str(data)}
         await asyncio.sleep(0.2)
+    print("Timeout while waiting for node_response.")
     content = {"message": "receive timeout"}
     return JSONResponse(content, status_code=400)
 
@@ -311,14 +329,20 @@ async def request_message(i_m: Request_Message):
 @app.post("/receive_request")
 async def receive_request(i_m: IP_Message):
     global pk
+    print(
+        f"Function 'receive_request' called with: dest_ip={i_m.dest_ip}, source_ip={i_m.source_ip}, pk={i_m.pk}"
+    )
     source_ip = get_own_ip()
+    print(f"Own IP: {source_ip}")
     if source_ip != i_m.dest_ip:
+        print("Mismatch in destination IP.")
         return HTTPException(status_code=400, detail="Wrong ip")
     dest_ip = i_m.source_ip
     # threshold = random.randrange(1, 2)
     threshold = 2
     own_public_key = pk
     pk_B = i_m.pk
+    print(f"Using own public key: {own_public_key} and received public key: {pk_B}")
 
     with sqlite3.connect("client.db") as db:
         cursor = db.execute(
@@ -330,16 +354,18 @@ async def receive_request(i_m: IP_Message):
             (threshold,),
         )
         node_ips = cursor.fetchall()
+    print(f"Selected node IPs from database: {node_ips}")
 
     # message name
     # message_name = i_m.message_name
     # message = xxxxx
     message = b"hello world" + random.randbytes(8)
+    print(f"Generated message: {message}")
 
     # send message to nodes
     await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)
     response = {"threshold": threshold, "public_key": own_public_key}
-    print("###############RESPONSE = ", response)
+    print(f"Sending response: {response}")
     return response
 
 
