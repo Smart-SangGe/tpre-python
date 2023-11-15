@@ -15,16 +15,15 @@ gmssl-python
 
 ## 安装步骤
 
-```
+```bash
 pip install
 ```
 
-
 ## 使用说明
 
-
 ## 参考文献  
-https://www.cnblogs.com/pam-sh/p/17364656.html#tprelib%E7%AE%97%E6%B3%95
+
+<https://www.cnblogs.com/pam-sh/p/17364656.html#tprelib%E7%AE%97%E6%B3%95>
 
 ## 许可证
 

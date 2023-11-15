@@ -35,6 +35,12 @@ The project relies on the following software:
 - gmssl
 - gmssl-python
 
+### Docker installer
+
+```bash
+apt update && apt install docker.io mosh -y
+```
+
 ### Docker version
 
 docker version:  
@@ -64,7 +70,6 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 docker build . -f basedockerfile -t git.mamahaha.work/sangge/tpre:base
 docker pull git.mamahaha.work/sangge/tpre:base  
 docker build . -t your_image_name
-docker run your_image_name
 ```
 
 ### Use pre-build image
@@ -75,6 +80,8 @@ docker run git.mamahaha.work/sangge/tpre:latest
 ```
 
 ## Usage Instructions
+
+details in [docs](doc/README_app_en.md)
 
 ## References  
 
