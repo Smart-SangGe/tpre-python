@@ -15,6 +15,13 @@ import pickle
 from fastapi.responses import JSONResponse
 import asyncio
 
+# 测试文本
+test_msessgaes = {
+    "name": "proxy re-encryption",
+    "environment": "distributed environment",
+    "usage": "data sharing",
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -359,7 +366,11 @@ async def receive_request(i_m: IP_Message):
     # message name
     # message_name = i_m.message_name
     # message = xxxxx
-    message = b"hello world" + random.randbytes(8)
+
+    # 根据message name到测试文本查找对应值
+    message = b(test_msessgaes[i_m.message_name])
+
+    # message = b"hello world" + random.randbytes(8)
     print(f"Generated message: {message}")
 
     # send message to nodes
