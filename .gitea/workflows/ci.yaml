@@ -14,10 +14,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Set up Docker container
-      uses: addnab/docker-run-action@v3
-      with:
-        image: git.mamahaha.work/sangge/tpre:base
-        options: -v .:/app  # 将当前工作目录挂载到容器中
-        run: |
-          python speed_test.py  # 执行Python脚本
+    - name: Run script in Docker container
+      run: |
+        docker run -v $PWD:/app git.mamahaha.work/sangge/tpre:base python speed_test.py
