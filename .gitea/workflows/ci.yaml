@@ -19,5 +19,5 @@ jobs:
 
     - name: Run script in Docker container
       run: |
-        echo $PWD
+        ls $PWD
         docker run -v $PWD:/app git.mamahaha.work/sangge/tpre:base python src/speed_test.py
