@@ -9,7 +9,7 @@ jobs:
   test:
     name: test speed
     runs-on: ubuntu-latest  
-    
+
     container:
       image: catthehacker/ubuntu:act-latest
 
@@ -19,4 +19,5 @@ jobs:
 
     - name: Run script in Docker container
       run: |
+        docker run -v $PWD:/app git.mamahaha.work/sangge/tpre:base ls
         docker run -v $PWD:/app git.mamahaha.work/sangge/tpre:base python speed_test.py
