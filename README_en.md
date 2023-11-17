@@ -68,7 +68,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```bash
 docker build . -f basedockerfile -t git.mamahaha.work/sangge/tpre:base
-docker pull git.mamahaha.work/sangge/tpre:base  
+(or docker pull git.mamahaha.work/sangge/tpre:base)  
 docker build . -t your_image_name
 ```
 
@@ -76,7 +76,6 @@ docker build . -t your_image_name
 
 ```bash
 docker pull git.mamahaha.work/sangge/tpre:latest
-docker run git.mamahaha.work/sangge/tpre:latest
 ```
 
 ## Usage Instructions
