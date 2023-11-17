@@ -20,4 +20,4 @@ jobs:
     - name: Run script in Docker container
       run: |
         ls $PWD/src
-        docker run -v $PWD:/app git.mamahaha.work/sangge/tpre:base ls src
+        docker run -v $PWD:/app git.mamahaha.work/sangge/tpre:base ls
