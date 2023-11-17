@@ -42,7 +42,17 @@ def send_ip():
 # 用环境变量获取本机ip
 def get_local_ip():
     global ip
-    ip = os.environ.get("HOST_IP", "IP not set")
+    ip = os.environ.get("HOST_IP")
+    if not ip:  # 如果环境变量中没有IP
+        try:
+            # 从网卡获取IP
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))  # 通过连接Google DNS获取IP
+            ip = str(s.getsockname()[0])
+            s.close()
+        except:
+            raise ValueError("Unable to get IP")
+            
 
 
 def init():
