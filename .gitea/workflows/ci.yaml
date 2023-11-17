@@ -9,6 +9,9 @@ jobs:
   test:
     name: test speed
     runs-on: ubuntu-latest  
+    
+    container:
+      image: catthehacker/ubuntu:act-latest
 
     steps:
     - name: Checkout repository
