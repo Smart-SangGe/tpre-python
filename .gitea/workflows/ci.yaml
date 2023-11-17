@@ -1,4 +1,4 @@
-name: Deploy App
+name: Test CI
 
 on:
   push:
@@ -6,41 +6,18 @@ on:
       - main
 
 jobs:
-  deploy:
-    name: Deploy to Web Server
+  test:
+    name: test speed
     runs-on: ubuntu-latest  
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-
-    - name: copy file via ssh password
-      uses: cross-the-world/scp-pipeline@master
+    - name: Set up Docker container
+      uses: addnab/docker-run-action@v3
       with:
-        host: "110.41.155.96"
-        user: ${{ secrets.USERNAME }}
-        pass: ${{ secrets.PASSWORD }}
-        local: "src/*"
-        remote: /root/mimajingsai/src/   
-
-    - name: copy file via ssh password
-      uses: cross-the-world/scp-pipeline@master
-      with:
-        host: "110.41.130.197"
-        user: ${{ secrets.USERNAME }}
-        pass: ${{ secrets.PASSWORD }}
-        local: "src/*"
-        remote: /root/mimajingsai/src/ 
-
-    - name: copy file via ssh password
-      uses: cross-the-world/scp-pipeline@master
-      with:
-        host: "110.41.21.35"
-        user: ${{ secrets.USERNAME }}
-        pass: ${{ secrets.PASSWORD }}
-        local: "src/*"
-        remote: /root/mimajingsai/src/ 
-
-
-      
+        image: git.mamahaha.work/sangge/tpre:base
+        options: -v .:/app  # 将当前工作目录挂载到容器中
+        run: |
+          python speed_test.py  # 执行Python脚本
