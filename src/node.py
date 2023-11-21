@@ -112,7 +112,14 @@ async def user_src(message: Req):
     dest_ip = message.dest_ip
     capsule = message.capsule
     ct = message.ct
-    capsule_ct = (capsule, ct.to_bytes(32))
+    # here has a problem. If ct longer than 32 bytes,
+    # here will raise an error then exit.
+    # So node will goes down.
+    # def int_to_bytes(ct):
+    #     byte_length = (ct.bit_length() + 7) // 8
+    #     return ct.to_bytes(byte_length, byteorder='big')
+    # capsule_ct = (capsule, int_to_bytes(ct))
+    capsule_ct = (capsule, ct.to_bytes(32)) 
     rk = message.rk
     print(f"Computed capsule_ct: {capsule_ct}")
     a, b = ReEncrypt(rk, capsule_ct)
