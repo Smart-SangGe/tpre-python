@@ -15,6 +15,13 @@ import pickle
 from fastapi.responses import JSONResponse
 import asyncio
 
+# 测试文本
+test_msessgaes = {
+    "name": b"proxy re-encryption",
+    "environment": b"distributed environment",
+    "usage": b"data sharing",
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -211,7 +218,7 @@ def check_merge(ct: int, ip: str):
         print("pk:", type(pk))
         print("pk_sender:", type(pk_sender))
         print("cfrags:", type(cfrags))
-        message = DecryptFrags(sk, pk, pk_sender, cfrags)
+        message = DecryptFrags(sk, pk, pk_sender, cfrags)  # type: ignore
 
         print("merge success", message)
         node_response = True
@@ -359,7 +366,11 @@ async def receive_request(i_m: IP_Message):
     # message name
     # message_name = i_m.message_name
     # message = xxxxx
-    message = b"hello world" + random.randbytes(8)
+
+    # 根据message name到测试文本查找对应值
+    message = test_msessgaes[i_m.message_name]
+
+    # message = b"hello world" + random.randbytes(8)
     print(f"Generated message: {message}")
 
     # send message to nodes
