@@ -210,7 +210,8 @@ def check_merge(ct: int, ip: str):
         temp_cfrag_cts = []
         for i in cfrag_cts:
             capsule = pickle.loads(i[0])
-            temp_cfrag_cts.append((capsule, int(i[1]).to_bytes(32)))
+            byte_length = (ct.bit_length() + 7) // 8
+            temp_cfrag_cts.append((capsule, int(i[1]).to_bytes(byte_length)))
 
         cfrags = mergecfrag(temp_cfrag_cts)
 
