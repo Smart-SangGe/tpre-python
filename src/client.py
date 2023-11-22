@@ -18,8 +18,7 @@ import asyncio
 # 测试文本
 test_msessgaes = {
     "name": b"proxy re-encryption",
-    "environment": b"distributed environment",
-    "usage": b"data sharing",
+    "environment": b"distributed environment"
 }
 
 

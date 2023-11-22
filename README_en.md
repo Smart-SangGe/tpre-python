@@ -38,7 +38,9 @@ The project relies on the following software:
 ### Docker installer
 
 ```bash
-apt update && apt install docker.io mosh -y
+apt update && apt install mosh -y 
+chmod +x install_docker.sh
+./install_docker.sh
 ```
 
 ### Docker version
