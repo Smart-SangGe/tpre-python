@@ -32,7 +32,7 @@ processed_message = ()  # 重加密后的数据
 
 # 向中心服务器发送自己的IP地址,并获取自己的id
 def send_ip():
-    url = server_address + "/get_node?ip=" + ip
+    url = server_address + "/get_node?ip=" + ip  # type: ignore
     # ip = get_local_ip() # type: ignore
     global id
     id = requests.get(url, timeout=3)
@@ -52,7 +52,6 @@ def get_local_ip():
             s.close()
         except:
             raise ValueError("Unable to get IP")
-            
 
 
 def init():
@@ -72,7 +71,7 @@ def clear():
 async def send_heartbeat_internal() -> None:
     timeout = 30
     global ip
-    url = server_address + "/heartbeat?ip=" + ip
+    url = server_address + "/heartbeat?ip=" + ip  # type: ignore
     while True:
         # print('successful send my_heart')
         try:
@@ -112,14 +111,10 @@ async def user_src(message: Req):
     dest_ip = message.dest_ip
     capsule = message.capsule
     ct = message.ct
-    # here has a problem. If ct longer than 32 bytes,
-    # here will raise an error then exit.
-    # So node will goes down.
-    # def int_to_bytes(ct):
-    #     byte_length = (ct.bit_length() + 7) // 8
-    #     return ct.to_bytes(byte_length, byteorder='big')
-    # capsule_ct = (capsule, int_to_bytes(ct))
-    capsule_ct = (capsule, ct.to_bytes(32)) 
+    
+    byte_length = (ct.bit_length() + 7) // 8
+    capsule_ct = (capsule, ct.to_bytes(byte_length))
+
     rk = message.rk
     print(f"Computed capsule_ct: {capsule_ct}")
     a, b = ReEncrypt(rk, capsule_ct)
