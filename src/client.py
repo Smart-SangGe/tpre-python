@@ -368,10 +368,12 @@ async def receive_request(i_m: IP_Message):
     # message = xxxxx
 
     # 根据message name到测试文本查找对应值
-    message = test_msessgaes[i_m.message_name]
+    try:
+        message = test_msessgaes[i_m.message_name]
 
-    # message = b"hello world" + random.randbytes(8)
-    print(f"Generated message: {message}")
+    except:
+        message = b"hello world" + random.randbytes(8)
+    print(f"Message to be send: {message}")
 
     # send message to nodes
     await send_messages(tuple(node_ips), message, dest_ip, pk_B, threshold)
