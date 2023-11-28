@@ -16,37 +16,34 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# 连接到数据库（如果数据库不存在，则会自动创建）
-conn = sqlite3.connect("server.db")
-# 创建游标对象，用于执行SQL语句
-cursor = conn.cursor()
-# 创建表: id: int; ip: TEXT
-cursor.execute(
-    """CREATE TABLE IF NOT EXISTS nodes (
-                   id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   ip TEXT NOT NULL,
-                   last_heartbeat INTEGER
-               )"""
-)
-
 
 def init():
     asyncio.create_task(receive_heartbeat_internal())
 
+    conn = sqlite3.connect("server.db")
+    cursor = conn.cursor()
+    # init table: id: int; ip: TEXT
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS nodes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ip TEXT NOT NULL,
+                    last_heartbeat INTEGER
+                )"""
+    )
+
 
 def clean_env():
     clear_database()
-    # 关闭游标和连接
-    cursor.close()
-    conn.close()
 
 
 @app.get("/server/show_nodes")
 async def show_nodes() -> list:
     nodes_list = []
-    # 查询数据
-    cursor.execute("SELECT * FROM nodes")
-    rows = cursor.fetchall()
+    with sqlite3.connect("server.db") as db:
+        # 查询数据
+        cursor = db.execute("SELECT * FROM nodes")
+        rows = cursor.fetchall()
+
     for row in rows:
         nodes_list.append(row)
     return nodes_list
@@ -71,12 +68,13 @@ async def get_node(ip: str) -> int:
     current_time = int(time.time())
     print("当前时间: ", current_time)
 
-    # 插入数据
-    cursor.execute(
-        "INSERT INTO nodes (id, ip, last_heartbeat) VALUES (?, ?, ?)",
-        (ip_int, ip, current_time),
-    )
-    conn.commit()
+    with sqlite3.connect("server.db") as db:
+        # 插入数据
+        db.execute(
+            "INSERT INTO nodes (id, ip, last_heartbeat) VALUES (?, ?, ?)",
+            (ip_int, ip, current_time),
+        )
+        db.commit()
 
     return ip_int
 
@@ -89,13 +87,15 @@ async def delete_node(ip: str) -> None:
     return:
     None
     """
-    # 查询要删除的节点
-    cursor.execute("SELECT * FROM nodes WHERE ip=?", (ip,))
-    row = cursor.fetchone()
+    with sqlite3.connect("server.db") as db:
+        # 查询要删除的节点
+        cursor = db.execute("SELECT * FROM nodes WHERE ip=?", (ip,))
+        row = cursor.fetchone()
     if row is not None:
-        # 执行删除操作
-        cursor.execute("DELETE FROM nodes WHERE ip=?", (ip,))
-        conn.commit()
+        with sqlite3.connect("server.db") as db:
+            # 执行删除操作
+            db.execute("DELETE FROM nodes WHERE ip=?", (ip,))
+            db.commit()
         print(f"Node with IP {ip} deleted successfully.")
     else:
         print(f"Node with IP {ip} not found.")
@@ -105,20 +105,22 @@ async def delete_node(ip: str) -> None:
 @app.get("/server/heartbeat")
 async def receive_heartbeat(ip: str):
     print("收到来自", ip, "的心跳包")
-    cursor.execute(
-        "UPDATE nodes SET last_heartbeat = ? WHERE ip = ?", (time.time(), ip)
-    )
+    with sqlite3.connect("server.db") as db:
+        db.execute(
+            "UPDATE nodes SET last_heartbeat = ? WHERE ip = ?", (time.time(), ip)
+        )
     return {"status": "received"}
 
 
 async def receive_heartbeat_internal():
     while 1:
         timeout = 70
-        # 删除超时的节点
-        cursor.execute(
-            "DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,)
-        )
-        conn.commit()
+        with sqlite3.connect("server.db") as db:
+            # 删除超时的节点
+            db.execute(
+                "DELETE FROM nodes WHERE last_heartbeat < ?", (time.time() - timeout,)
+            )
+            db.commit()
         await asyncio.sleep(timeout)
 
 
@@ -133,9 +135,11 @@ async def send_nodes_list(count: int) -> list:
     """
     nodes_list = []
 
-    # 查询数据库中的节点数据
-    cursor.execute("SELECT * FROM nodes LIMIT ?", (count,))
-    rows = cursor.fetchall()
+    with sqlite3.connect("server.db") as db:
+        # 查询数据库中的节点数据
+        cursor = db.execute("SELECT * FROM nodes LIMIT ?", (count,))
+        rows = cursor.fetchall()
+        
     for row in rows:
         id, ip, last_heartbeat = row
         nodes_list.append(ip)
@@ -147,8 +151,9 @@ async def send_nodes_list(count: int) -> list:
 
 # @app.get("/server/clear_database")
 def clear_database() -> None:
-    cursor.execute("DELETE FROM nodes")
-    conn.commit()
+    with sqlite3.connect("server.db") as db:
+        db.execute("DELETE FROM nodes")
+        db.commit()
 
 
 if __name__ == "__main__":
