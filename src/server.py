@@ -36,6 +36,11 @@ def clean_env():
     clear_database()
 
 
+@app.get("/")
+async def home():
+    return {"message": "Hello, World!"}
+
+
 @app.get("/server/show_nodes")
 async def show_nodes() -> list:
     nodes_list = []
@@ -139,7 +144,7 @@ async def send_nodes_list(count: int) -> list:
         # 查询数据库中的节点数据
         cursor = db.execute("SELECT * FROM nodes LIMIT ?", (count,))
         rows = cursor.fetchall()
-        
+
     for row in rows:
         id, ip, last_heartbeat = row
         nodes_list.append(ip)
