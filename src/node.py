@@ -8,6 +8,7 @@ from tpre import *
 import os
 from typing import Any, Tuple
 import base64
+import logging
 
 
 @asynccontextmanager
@@ -25,6 +26,9 @@ client_ip_src = ""  # 发送信息用户的ip
 client_ip_des = ""  # 接收信息用户的ip
 processed_message = ()  # 重加密后的数据
 
+logger = logging.getLogger("uvicorn")
+
+
 # class C(BaseModel):
 #     Tuple: Tuple[capsule, int]
 #     ip_src: str
@@ -36,6 +40,7 @@ def send_ip():
     # ip = get_local_ip() # type: ignore
     global id
     id = requests.get(url, timeout=3)
+    logger.info(f"中心服务器返回节点ID为: {id}")
     print("中心服务器返回节点ID为: ", id)
 
 
@@ -57,7 +62,7 @@ def get_local_ip():
 def init():
     get_local_ip()
     send_ip()
-    task = asyncio.create_task(send_heartbeat_internal())
+    asyncio.create_task(send_heartbeat_internal())
     print("Finish init")
 
 
@@ -75,11 +80,12 @@ async def send_heartbeat_internal() -> None:
     while True:
         # print('successful send my_heart')
         try:
-            folderol = requests.get(url, timeout=3)
+            requests.get(url, timeout=3)
         except:
+            logger.error("Central server error")
             print("Central server error")
 
-        # 删除超时的节点（假设你有一个异步的数据库操作函数）
+        # 删除超时的节点
         await asyncio.sleep(timeout)
 
 
@@ -106,21 +112,29 @@ async def user_src(message: Req):
             "rk": rk_list[i],
         }
     """
+    logger.info(f"node: {message}")
     print("node: ", message)
     source_ip = message.source_ip
     dest_ip = message.dest_ip
     capsule = message.capsule
     ct = message.ct
-    
+
     byte_length = (ct.bit_length() + 7) // 8
     capsule_ct = (capsule, ct.to_bytes(byte_length))
 
     rk = message.rk
+    logger.info(f"Computed capsule_ct: {capsule_ct}")
     print(f"Computed capsule_ct: {capsule_ct}")
-    a, b = ReEncrypt(rk, capsule_ct)
+
+    a, b = ReEncrypt(rk, capsule_ct)  # type: ignore
     processed_message = (a, int.from_bytes(b))
+
+    logger.info(f"Re-encrypted message: {processed_message}")
     print(f"Re-encrypted message: {processed_message}")
+
     await send_user_des_message(source_ip, dest_ip, processed_message)
+
+    logger.info("Message sent to destination user.")
     print("Message sent to destination user.")
     return HTTPException(status_code=200, detail="message recieved")
 
@@ -132,6 +146,8 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
     response = requests.post(
         "http://" + dest_ip + ":8002" + "/receive_messages", json=data
     )
+
+    logger.info(f"send stauts: {response.text}")
     print("send stauts:", response.text)
 
 
