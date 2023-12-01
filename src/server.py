@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import sqlite3
 import asyncio
 import time
+import ipaddress
 
 
 @asynccontextmanager
@@ -54,15 +55,27 @@ async def show_nodes() -> list:
     return nodes_list
 
 
+def validate_ip(ip: str) -> bool:
+    try:
+        ipaddress.ip_address(ip)
+        return True
+    except ValueError:
+        return False
+
+
 @app.get("/server/get_node")
 async def get_node(ip: str) -> int:
     """
-    中心服务器与节点交互, 节点发送ip, 中心服务器接收ip存入数据库并将ip转换为int作为节点id返回给节点
-    params:
-    ip: node ip
-    return:
-    id: ip按点分割成四部分, 每部分转二进制后拼接再转十进制作为节点id
+    中心服务器与节点交互, 节点发送ip, 中心服务器接收ip存入数据库并将ip转换为int作为节点id返回给节点  
+    params:  
+    ip: node ip  
+    return:  
+    id: ip按点分割成四部分, 每部分转二进制后拼接再转十进制作为节点id  
     """
+    if not validate_ip(ip):
+        content = {"message": "invalid ip "}
+        return JSONResponse(content, status_code=400)  # type: ignore
+
     ip_parts = ip.split(".")
     ip_int = 0
     for i in range(4):
@@ -87,11 +100,12 @@ async def get_node(ip: str) -> int:
 @app.get("/server/delete_node")
 async def delete_node(ip: str) -> None:
     """
-    param:
-    ip: 待删除节点的ip地址
-    return:
-    None
+    param:  
+    ip: 待删除节点的ip地址  
+    return:  
+    None  
     """
+    
     with sqlite3.connect("server.db") as db:
         # 查询要删除的节点
         cursor = db.execute("SELECT * FROM nodes WHERE ip=?", (ip,))
@@ -109,6 +123,9 @@ async def delete_node(ip: str) -> None:
 # 接收节点心跳包
 @app.get("/server/heartbeat")
 async def receive_heartbeat(ip: str):
+    if not validate_ip(ip):
+        content = {"message": "invalid ip "}
+        return JSONResponse(content, status_code=400)
     print("收到来自", ip, "的心跳包")
     with sqlite3.connect("server.db") as db:
         db.execute(
