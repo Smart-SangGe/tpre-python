@@ -11,3 +11,4 @@ src/temp_key_file
 src/client.db
 src/server.db
 build
+src/tpre.cpython-311-x86_64-linux-gnu.so
