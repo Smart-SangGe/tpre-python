@@ -1,11 +1,14 @@
 from setuptools import setup, Extension
 
 # 定义您的扩展
-ext = Extension("tpre", sources=["tpre.c"])
+ext = Extension(
+    "tpreECC",
+    sources=["tpreECC.c"],
+)
 
 setup(
-    name="tpre",
+    name="tpreECC",
     version="1.0",
-    description="tpre written in C",
+    description="basic ECC written in C",
     ext_modules=[ext],
 )

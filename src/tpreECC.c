@@ -2,9 +2,32 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/tpre.h"
 
-const SM2_BN SM2_P = {
+// define TPRE Big Number
+typedef uint64_t TPRE_BN[8]
+
+// GF(p)
+typedef TPRE_BN SM2_Fp;
+
+// GF(n)
+typedef TPRE_BN SM2_Fn;
+
+// 定义一个结构体来表示雅各比坐标系的点
+typedef struct
+{
+    TPRE_BN X;
+    TPRE_BN Y;
+    TPRE_BN Z;
+} JACOBIAN_POINT;
+
+// 定义一个结构体来表示点
+typedef struct
+{
+    uint8_t x[32];
+    uint8_t y[32];
+} TPRE_POINT;
+
+const TPRE_BN SM2_P = {
     0xffffffff,
     0xffffffff,
     0x00000000,
@@ -15,7 +38,7 @@ const SM2_BN SM2_P = {
     0xfffffffe,
 };
 
-const SM2_BN SM2_B = {
+const TPRE_BN SM2_B = {
     0x4d940e93,
     0xddbcbd41,
     0x15ab8f92,
@@ -26,6 +49,7 @@ const SM2_BN SM2_B = {
     0x28e9fa9e,
 };
 
+// 生成元GX, GY
 const SM2_JACOBIAN_POINT _SM2_G = {
     {
         0x334c74c7,
@@ -58,9 +82,10 @@ const SM2_JACOBIAN_POINT _SM2_G = {
         0,
     },
 };
+
 const SM2_JACOBIAN_POINT *SM2_G = &_SM2_G;
 
-const SM2_BN SM2_N = {
+const TPRE_BN SM2_N = {
     0x39d54123,
     0x53bbf409,
     0x21c6052b,
@@ -72,7 +97,7 @@ const SM2_BN SM2_N = {
 };
 
 // u = (p - 1)/4, u + 1 = (p + 1)/4
-const SM2_BN SM2_U_PLUS_ONE = {
+const TPRE_BN SM2_U_PLUS_ONE = {
     0x00000000,
     0x40000000,
     0xc0000000,
@@ -83,13 +108,9 @@ const SM2_BN SM2_U_PLUS_ONE = {
     0x3fffffff,
 };
 
-const SM2_BN SM2_ONE = {1, 0, 0, 0, 0, 0, 0, 0};
-const SM2_BN SM2_TWO = {2, 0, 0, 0, 0, 0, 0, 0};
-const SM2_BN SM2_THREE = {3, 0, 0, 0, 0, 0, 0, 0};
-
-
-
-
+const TPRE_BN SM2_ONE = {1, 0, 0, 0, 0, 0, 0, 0};
+const TPRE_BN SM2_TWO = {2, 0, 0, 0, 0, 0, 0, 0};
+const TPRE_BN SM2_THREE = {3, 0, 0, 0, 0, 0, 0, 0};
 
 // 将Python中的multiply函数转换为C
 static Point multiply(Point a, int64_t n)
