@@ -6,8 +6,8 @@
 // define TPRE Big Number
 typedef uint64_t TPRE_BN[8]
 
-// GF(p)
-typedef TPRE_BN SM2_Fp;
+    // GF(p)
+    typedef TPRE_BN SM2_Fp;
 
 // GF(n)
 typedef TPRE_BN SM2_Fn;
@@ -29,6 +29,17 @@ typedef struct
 
 const TPRE_BN SM2_P = {
     0xffffffff,
+    0xffffffff,
+    0x00000000,
+    0xffffffff,
+    0xffffffff,
+    0xffffffff,
+    0xffffffff,
+    0xfffffffe,
+};
+
+const TPRE_BN SM2_A = {
+    0xfffffffc,
     0xffffffff,
     0x00000000,
     0xffffffff,
@@ -112,15 +123,15 @@ const TPRE_BN SM2_ONE = {1, 0, 0, 0, 0, 0, 0, 0};
 const TPRE_BN SM2_TWO = {2, 0, 0, 0, 0, 0, 0, 0};
 const TPRE_BN SM2_THREE = {3, 0, 0, 0, 0, 0, 0, 0};
 
-// 将Python中的multiply函数转换为C
-static Point multiply(Point a, int64_t n)
+// 点乘
+static void multiply(TPRE_POINT r, const TPRE_POINT a, int64_t n)
 {
     Point result;
     // ...实现乘法逻辑...
     return result;
 }
 
-// Python接口函数
+// 点乘的Python接口函数
 static PyObject *py_multiply(PyObject *self, PyObject *args)
 {
     Point a;
@@ -138,16 +149,30 @@ static PyObject *py_multiply(PyObject *self, PyObject *args)
     return Py_BuildValue("(ll)", result.x, result.y);
 }
 
+// 点加的Python接口函数
+static PyObject *py_add(PyObject *self, PyObject *args)
+{
+    return 
+}
+
+// 求逆的Python接口函数
+static PyObject *py_inv(PyObject *self, PyObject *args)
+{
+    return
+}
+
 // 模块方法定义
 static PyMethodDef MyMethods[] = {
-    {"multiply", py_multiply, METH_VARARGS, "Multiply a point on the curve by a scalar"},
+    {"multiply", py_multiply, METH_VARARGS, "Multiply a point on the sm2p256v1 curve"},
+    {"add", py_add, METH_VARARGS, "Add a point on thesm2p256v1 curve"},
+    {"inv", py_inv, METH_VARARGS, "Calculate an inv of a number"},
     {NULL, NULL, 0, NULL} // 哨兵
 };
 
 // 模块定义
-static struct PyModuleDef tpre = {
+static struct PyModuleDef tpreECC = {
     PyModuleDef_HEAD_INIT,
-    "tpre",
+    "tpreECC",
     NULL, // 模块文档
     -1,
     MyMethods};
@@ -155,5 +180,5 @@ static struct PyModuleDef tpre = {
 // 初始化模块
 PyMODINIT_FUNC PyInit_tpre(void)
 {
-    return PyModule_Create(&tpre);
+    return PyModule_Create(&tpreECC);
 }
