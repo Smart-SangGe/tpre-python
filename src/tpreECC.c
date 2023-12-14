@@ -123,6 +123,12 @@ const TPRE_BN SM2_ONE = {1, 0, 0, 0, 0, 0, 0, 0};
 const TPRE_BN SM2_TWO = {2, 0, 0, 0, 0, 0, 0, 0};
 const TPRE_BN SM2_THREE = {3, 0, 0, 0, 0, 0, 0, 0};
 
+#define GETU32(p)             \
+    ((uint32_t)(p)[0] << 24 | \
+     (uint32_t)(p)[1] << 16 | \
+     (uint32_t)(p)[2] << 8 |  \
+     (uint32_t)(p)[3])
+
 // 点乘
 static void multiply(TPRE_POINT r, const TPRE_POINT a, int64_t n)
 {
@@ -131,28 +137,122 @@ static void multiply(TPRE_POINT r, const TPRE_POINT a, int64_t n)
     return result;
 }
 
+// 点加
+static void add(TPRE_POINT *R, TPRE_POINT *P, TPRE_POINT *Q)
+{
+    JACOBIAN_POINT P_;
+    JACOBIAN_POINT Q_;
+
+    jacobianPoint_from_bytes(&P_, (uint8_t *)P)
+        jacobianPoint_from_bytes(&Q_, (uint8_t *)Q)
+            jacobianPoint_add(&P_, &P_, &Q_);
+    jacobianPoint_to_bytes(&P_, (uint8_t *)R);
+}
+
+// 求逆
+static void inv()
+{
+}
+
+// jacobianPoint点加
+static void jacobianPoint_add(JACOBIAN_POINT *R, const JACOBIAN_POINT *P, const JACOBIAN_POINT *Q)
+{
+    const uint64_t *X1 = P->X;
+    const uint64_t *Y1 = P->Y;
+    const uint64_t *Z1 = P->Z;
+    const uint64_t *x2 = Q->X;
+    const uint64_t *y2 = Q->Y;
+    SM2_BN T1;
+    SM2_BN T2;
+    SM2_BN T3;
+    SM2_BN T4;
+    SM2_BN X3;
+    SM2_BN Y3;
+    SM2_BN Z3;
+    if (sm2_jacobian_point_is_at_infinity(Q))
+    {
+        sm2_jacobian_point_copy(R, P);
+        return;
+    }
+
+    if (sm2_jacobian_point_is_at_infinity(P))
+    {
+        sm2_jacobian_point_copy(R, Q);
+        return;
+    }
+
+    assert(sm2_bn_is_one(Q->Z));
+
+    sm2_fp_sqr(T1, Z1);
+    sm2_fp_mul(T2, T1, Z1);
+    sm2_fp_mul(T1, T1, x2);
+    sm2_fp_mul(T2, T2, y2);
+    sm2_fp_sub(T1, T1, X1);
+    sm2_fp_sub(T2, T2, Y1);
+    if (sm2_bn_is_zero(T1))
+    {
+        if (sm2_bn_is_zero(T2))
+        {
+            SM2_JACOBIAN_POINT _Q, *Q = &_Q;
+            sm2_jacobian_point_set_xy(Q, x2, y2);
+
+            sm2_jacobian_point_dbl(R, Q);
+            return;
+        }
+        else
+        {
+            sm2_jacobian_point_set_infinity(R);
+            return;
+        }
+    }
+    sm2_fp_mul(Z3, Z1, T1);
+    sm2_fp_sqr(T3, T1);
+    sm2_fp_mul(T4, T3, T1);
+    sm2_fp_mul(T3, T3, X1);
+    sm2_fp_dbl(T1, T3);
+    sm2_fp_sqr(X3, T2);
+    sm2_fp_sub(X3, X3, T1);
+    sm2_fp_sub(X3, X3, T4);
+    sm2_fp_sub(T3, T3, X3);
+    sm2_fp_mul(T3, T3, T2);
+    sm2_fp_mul(T4, T4, Y1);
+    sm2_fp_sub(Y3, T3, T4);
+
+    sm2_bn_copy(R->X, X3);
+    sm2_bn_copy(R->Y, Y3);
+    sm2_bn_copy(R->Z, Z3);
+}
+
+// bytes转jacobianPoint
+static void jacobianPoint_from_bytes(JACOBIAN_POINT *P, const uint8_t in[64])
+{
+}
+
+// jacobianPoint转bytes
+static void jacobianPoint_to_bytes(JACOBIAN_POINT *P, const uint8_t in[64])
+{
+}
+
+static void BN_from_bytes(TPRE_BN *r, const uint8_t in[32])
+{
+    int i;
+    for (i = 7; i >= 0; i--)
+    {
+        r[i] = GETU32(in);
+        in += sizeof(uint32_t);
+    }
+}
+
 // 点乘的Python接口函数
 static PyObject *py_multiply(PyObject *self, PyObject *args)
 {
-    Point a;
-    int64_t n;
-
-    // 从Python参数解析值到C变量
-    if (!PyArg_ParseTuple(args, "(ll)l", &a.x, &a.y, &n))
-    {
-        return NULL;
-    }
-
-    Point result = multiply(a, n);
-
-    // 将C结构体的结果转换回Python对象
-    return Py_BuildValue("(ll)", result.x, result.y);
+    return
 }
 
 // 点加的Python接口函数
 static PyObject *py_add(PyObject *self, PyObject *args)
 {
-    return 
+    return
 }
 
 // 求逆的Python接口函数
