@@ -2,8 +2,10 @@ name: Test CI
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - 'include/**'
+      - 'lib/**'
+      - 'src/**'
 
 jobs:
   test:
