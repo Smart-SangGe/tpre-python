@@ -20,7 +20,9 @@ app = FastAPI(lifespan=lifespan)
 
 def init():
     asyncio.create_task(receive_heartbeat_internal())
+    init_db()
 
+def init_db():
     conn = sqlite3.connect("server.db")
     cursor = conn.cursor()
     # init table: id: int; ip: TEXT
@@ -66,11 +68,11 @@ def validate_ip(ip: str) -> bool:
 @app.get("/server/get_node")
 async def get_node(ip: str) -> int:
     """
-    中心服务器与节点交互, 节点发送ip, 中心服务器接收ip存入数据库并将ip转换为int作为节点id返回给节点  
-    params:  
-    ip: node ip  
-    return:  
-    id: ip按点分割成四部分, 每部分转二进制后拼接再转十进制作为节点id  
+    中心服务器与节点交互, 节点发送ip, 中心服务器接收ip存入数据库并将ip转换为int作为节点id返回给节点
+    params:
+    ip: node ip
+    return:
+    id: ip按点分割成四部分, 每部分转二进制后拼接再转十进制作为节点id
     """
     if not validate_ip(ip):
         content = {"message": "invalid ip "}
@@ -100,12 +102,12 @@ async def get_node(ip: str) -> int:
 @app.get("/server/delete_node")
 async def delete_node(ip: str) -> None:
     """
-    param:  
-    ip: 待删除节点的ip地址  
-    return:  
-    None  
+    param:
+    ip: 待删除节点的ip地址
+    return:
+    None
     """
-    
+
     with sqlite3.connect("server.db") as db:
         # 查询要删除的节点
         cursor = db.execute("SELECT * FROM nodes WHERE ip=?", (ip,))
