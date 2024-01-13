@@ -3,10 +3,12 @@ FROM python:3.11
 COPY requirements.txt /app/
 
 # 设置目标平台参数
-ARG TARGETPLATFORM
+#ARG TARGETPLATFORM
 
 # 根据目标平台复制相应架构的库文件
-COPY lib/${TARGETPLATFORM}/* /lib/
+#COPY lib/${TARGETPLATFORM}/* /lib/
+
+COPY lib/* /lib/
 
 WORKDIR /app
 

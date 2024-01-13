@@ -12,8 +12,7 @@ The project uses the Chinese national standard cryptography algorithm to impleme
 ├── basedockerfile (being used to build base iamge)  
 ├── dockerfile (being used to build application)  
 ├── doc (development documents)  
-├── include (gmssl header)  
-├── lib (gmssl shared object)  
+├── gmssl (gmssl source code)
 ├── LICENSE  
 ├── README_en.md  
 ├── README.md  
@@ -57,6 +56,14 @@ docker version:
 
 This project depends on gmssl, so you need to compile it from source first.  
 Visit [GmSSL](https://github.com/guanzhi/GmSSL) to learn how to install.  
+
+Or we use git submodule to reference repo of gmssl.
+
+```bash
+git clone --recursive https://git.mamahaha.work/sangge/tpre-python.git
+chmod +x install_gmssl.sh  
+./install_gmssl.sh  
+```
 
 Then install essential python libs  
 
