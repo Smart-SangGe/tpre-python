@@ -3,8 +3,6 @@ name: Test CI
 on:
   push:
     paths:
-      - 'include/**'
-      - 'lib/**'
       - 'src/**'
 
 jobs:
