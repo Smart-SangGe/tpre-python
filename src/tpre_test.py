@@ -1,4 +1,5 @@
-from tpre import *
+from tpre import hash2, hash3, hash4, multiply, g, sm2p256v1
+import random
 import unittest
 
 

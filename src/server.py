@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import sqlite3
@@ -9,7 +8,7 @@ import ipaddress
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     init()
     yield
     clean_env()
@@ -21,6 +20,7 @@ app = FastAPI(lifespan=lifespan)
 def init():
     asyncio.create_task(receive_heartbeat_internal())
     init_db()
+
 
 def init_db():
     conn = sqlite3.connect("server.db")
@@ -165,7 +165,8 @@ async def send_nodes_list(count: int) -> list:
         rows = cursor.fetchall()
 
     for row in rows:
-        id, ip, last_heartbeat = row
+        # id, ip, last_heartbeat = row
+        _, ip, _ = row
         nodes_list.append(ip)
 
     print("收到来自客户端的节点列表请求...")

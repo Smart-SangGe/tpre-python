@@ -64,7 +64,7 @@ for N in range(4, 21, 2):
 
     # 9
     start_time = time.time()
-    cfrags = mergecfrag(cfrag_cts)
+    cfrags = MergeCFrag(cfrag_cts)
     m = DecryptFrags(sk_b, pk_b, pk_a, cfrags)
     end_time = time.time()
     elapsed_time_dec = end_time - start_time

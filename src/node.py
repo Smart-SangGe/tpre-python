@@ -1,18 +1,16 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException
 import requests
 from contextlib import asynccontextmanager
 import socket
 import asyncio
 from pydantic import BaseModel
-from tpre import *
+from tpre import capsule, ReEncrypt
 import os
-from typing import Any, Tuple
-import base64
 import logging
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     init()
     yield
     clear()
@@ -55,7 +53,7 @@ def get_local_ip():
             s.connect(("8.8.8.8", 80))  # 通过连接Google DNS获取IP
             ip = str(s.getsockname()[0])
             s.close()
-        except:
+        except IndexError:
             raise ValueError("Unable to get IP")
 
 
@@ -81,7 +79,7 @@ async def send_heartbeat_internal() -> None:
         # print('successful send my_heart')
         try:
             requests.get(url, timeout=3)
-        except:
+        except requests.exceptions.RequestException:
             logger.error("Central server error")
             print("Central server error")
 
@@ -139,7 +137,9 @@ async def user_src(message: Req):
     return HTTPException(status_code=200, detail="message recieved")
 
 
-async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # 发送消息给用户2
+async def send_user_des_message(
+    source_ip: str, dest_ip: str, re_message
+):  # 发送消息给用户2
     data = {"Tuple": re_message, "ip": source_ip}  # 类型不匹配
 
     # 发送 HTTP POST 请求

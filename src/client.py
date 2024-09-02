@@ -2,14 +2,19 @@ from fastapi import FastAPI, HTTPException
 import requests
 import os
 from typing import Tuple
-from tpre import *
+from tpre import (
+    GenerateKeyPair,
+    Encrypt,
+    DecryptFrags,
+    GenerateReKey,
+    MergeCFrag,
+    point,
+)
 import sqlite3
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 import socket
 import random
-import time
-import base64
 import json
 import pickle
 from fastapi.responses import JSONResponse
@@ -18,12 +23,12 @@ import asyncio
 # 测试文本
 test_msessgaes = {
     "name": b"proxy re-encryption",
-    "environment": b"distributed environment"
+    "environment": b"distributed environment",
 }
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     init()
     yield
     clean_env()
@@ -200,7 +205,7 @@ def check_merge(ct: int, ip: str):
         try:
             pkx, pky = result[0]  # result[0] = (pkx, pky)
             pk_sender = (int(pkx), int(pky))
-        except:
+        except IndexError:
             pk_sender, T = 0, -1
 
     T = 2
@@ -212,7 +217,7 @@ def check_merge(ct: int, ip: str):
             byte_length = (ct.bit_length() + 7) // 8
             temp_cfrag_cts.append((capsule, int(i[1]).to_bytes(byte_length)))
 
-        cfrags = mergecfrag(temp_cfrag_cts)
+        cfrags = MergeCFrag(temp_cfrag_cts)
 
         print("sk:", type(sk))
         print("pk:", type(pk))
@@ -371,7 +376,7 @@ async def receive_request(i_m: IP_Message):
     try:
         message = test_msessgaes[i_m.message_name]
 
-    except:
+    except IndexError:
         message = b"hello world" + random.randbytes(8)
     print(f"Message to be send: {message}")
 
@@ -391,7 +396,7 @@ def get_own_ip() -> str:
             s.connect(("8.8.8.8", 80))  # 通过连接Google DNS获取IP
             ip = s.getsockname()[0]
             s.close()
-        except:
+        except IndexError:
             raise ValueError("Unable to get IP")
     return str(ip)
 

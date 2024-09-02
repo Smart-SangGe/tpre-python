@@ -28,7 +28,7 @@ while total_time < 1:
     total_time += elapsed_time
     # print(f"加密算法运行时间:{elapsed_time}秒")
 
-    # 3 
+    # 3
     pk_b, sk_b = GenerateKeyPair()
 
     # 5
@@ -54,7 +54,7 @@ while total_time < 1:
 
     # 9
     start_time = time.time()
-    cfrags = mergecfrag(cfrag_cts)
+    cfrags = MergeCFrag(cfrag_cts)
     m = DecryptFrags(sk_b, pk_b, pk_a, cfrags)
     end_time = time.time()
     elapsed_time = end_time - start_time

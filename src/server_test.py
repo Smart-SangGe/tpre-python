@@ -1,7 +1,7 @@
 import unittest
 import sqlite3
 import os
-from server import *
+from server import init_db
 
 
 class TestServer(unittest.TestCase):
@@ -21,8 +21,6 @@ class TestServer(unittest.TestCase):
         # 关闭数据库连接
         conn.close()
         os.remove("server.db")
-        
-        
 
 
 if __name__ == "__main__":

@@ -1,4 +1,11 @@
-from tpre import *
+from tpre import (
+    GenerateKeyPair,
+    Encrypt,
+    GenerateReKey,
+    ReEncrypt,
+    MergeCFrag,
+    DecryptFrags,
+)
 import time
 
 N = 20
@@ -52,7 +59,7 @@ for i in range(1, 10):
 
     # 9
     start_time = time.time()
-    cfrags = mergecfrag(cfrag_cts)
+    cfrags = MergeCFrag(cfrag_cts)
     m = DecryptFrags(sk_b, pk_b, pk_a, cfrags)
     end_time = time.time()
     elapsed_time = end_time - start_time
