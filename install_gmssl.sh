@@ -6,7 +6,6 @@ mkdir include
 cp gmssl/include include
 
 mkdir gmssl/build
-cd gmssl/build
+cd gmssl/build || exit
 cmake ..
-make
-cp bin/lib* ../../lib
+sudo make install

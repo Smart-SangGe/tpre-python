@@ -17,55 +17,55 @@ The project uses the Chinese national standard cryptography algorithm to impleme
 ├── README_en.md  
 ├── README.md  
 ├── requirements.txt  
-└── src (application source code)  
+└── src (application source code)
 
 ## Environment Dependencies
 
 ### Bare mental version(UNTESTED)
 
-System requirements:  
+System requirements:
 
 - Linux
 - Windows(may need to complie and install gmssl yourself)
 
-The project relies on the following software:  
+The project relies on the following software:
 
-- Python 3.11
-- gmssl
-- gmssl-python
+- Python 3.12
+- gmssl v3.1.1
+- gmssl-python 2.2.2
 
 ### Docker installer
 
 ```bash
-apt update && apt install mosh -y 
+apt update && apt install mosh -y
 chmod +x install_docker.sh
 ./install_docker.sh
 ```
 
 ### Docker version
 
-docker version:  
+docker version:
 
-- Version:           24.0.5  
-- API version:       1.43  
-- Go version:        go1.20.6  
+- Version: 24.0.5
+- API version: 1.43
+- Go version: go1.20.6
 
 ## Installation Steps
 
 ### Pre-installation
 
 This project depends on gmssl, so you need to compile it from source first.  
-Visit [GmSSL](https://github.com/guanzhi/GmSSL) to learn how to install.  
+Visit [GmSSL](https://github.com/guanzhi/GmSSL) to learn how to install.
 
 Or we use git submodule to reference repo of gmssl.
 
 ```bash
 git clone --recursive https://git.mamahaha.work/sangge/tpre-python.git
-chmod +x install_gmssl.sh  
-./install_gmssl.sh  
+chmod +x install_gmssl.sh
+./install_gmssl.sh
 ```
 
-Then install essential python libs  
+Then install essential python libs
 
 ```bash
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
@@ -77,7 +77,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```bash
 docker build . -f basedockerfile -t git.mamahaha.work/sangge/tpre:base
-(or docker pull git.mamahaha.work/sangge/tpre:base)  
+(or docker pull git.mamahaha.work/sangge/tpre:base)
 docker build . -t your_image_name
 ```
 
@@ -91,7 +91,7 @@ docker pull git.mamahaha.work/sangge/tpre:latest
 
 details in [docs](doc/README_app_en.md)
 
-## References  
+## References
 
 [TPRE Algorithm Blog Post](https://www.cnblogs.com/pam-sh/p/17364656.html#tprelib%E7%AE%97%E6%B3%95)  
 [Gmssl-python library](https://github.com/GmSSL/GmSSL-Python)
