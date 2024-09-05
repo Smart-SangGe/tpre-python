@@ -1,6 +1,7 @@
 from gmssl import Sm3, Sm2Key, Sm4Cbc, DO_ENCRYPT, DO_DECRYPT
 from typing import Tuple
 import random
+import ecc_rs
 
 point = Tuple[int, int]
 capsule = Tuple[point, point, int]
@@ -33,17 +34,26 @@ sm2p256v1 = CurveFp(
 g = (sm2p256v1.Gx, sm2p256v1.Gy)
 
 
-def multiply(a: point, n: int) -> point:
-    N = sm2p256v1.N
-    A = sm2p256v1.A
-    P = sm2p256v1.P
-    return fromJacobian(jacobianMultiply(toJacobian(a), n, N, A, P), P)
+def multiply(a: point, n: int, flag: int = 0) -> point:
+    if flag == 1:
+
+        result = ecc_rs.multiply(a, n)
+        return result
+    else:
+        N = sm2p256v1.N
+        A = sm2p256v1.A
+        P = sm2p256v1.P
+        return fromJacobian(jacobianMultiply(toJacobian(a), n, N, A, P), P)
 
 
-def add(a: point, b: point) -> point:
-    A = sm2p256v1.A
-    P = sm2p256v1.P
-    return fromJacobian(jacobianAdd(toJacobian(a), toJacobian(b), A, P), P)
+def add(a: point, b: point, flag: int = 0) -> point:
+    if flag == 1:
+        result = ecc_rs.add(a, b)
+        return result
+    else:
+        A = sm2p256v1.A
+        P = sm2p256v1.P
+        return fromJacobian(jacobianAdd(toJacobian(a), toJacobian(b), A, P), P)
 
 
 def inv(a: int, n: int) -> int:
