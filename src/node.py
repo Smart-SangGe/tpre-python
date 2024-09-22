@@ -1,12 +1,18 @@
-from fastapi import FastAPI, HTTPException
-import requests
-from contextlib import asynccontextmanager
-import socket
 import asyncio
-from pydantic import BaseModel
-from tpre import capsule, ReEncrypt
-import os
+import json
 import logging
+import os
+import socket
+import threading
+import time
+from contextlib import asynccontextmanager
+
+import requests
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+from eth_logger import call_eth_logger
+from tpre import ReEncrypt, capsule
 
 
 @asynccontextmanager
@@ -15,6 +21,8 @@ async def lifespan(_: FastAPI):
     yield
     clear()
 
+
+message_list = []
 
 app = FastAPI(lifespan=lifespan)
 server_address = "http://60.204.236.38:8000/server"
@@ -117,6 +125,17 @@ async def user_src(message: Req):
     capsule = message.capsule
     ct = message.ct
 
+    payload = {
+        "source_ip": source_ip,
+        "dest_ip": dest_ip,
+        "capsule": capsule,
+        "ct": ct,
+        "rk": message.rk,
+    }
+    # 将消息详情记录到区块链
+    global message_list
+    message_list.append(payload)
+
     byte_length = (ct.bit_length() + 7) // 8
     capsule_ct = (capsule, ct.to_bytes(byte_length))
 
@@ -151,7 +170,24 @@ async def send_user_des_message(
     print("send stauts:", response.text)
 
 
+def log_message():
+    while True:
+        global message_list
+        payload = json.dumps(message_list)
+        message_list = []
+        call_eth_logger(wallet_address, wallet_pk, payload)
+        time.sleep(2)
+
+
+wallet_address = (
+    "0xe02666Cb63b3645E7B03C9082a24c4c1D7C9EFf6"  # 修改成要使用的钱包地址/私钥
+)
+wallet_pk = "ae66ae3711a69079efd3d3e9b55f599ce7514eb29dfe4f9551404d3f361438c6"
+
+
 if __name__ == "__main__":
     import uvicorn  # pylint: disable=e0401
+
+    threading.Thread(target=log_message).start()
 
     uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True, log_level="debug")
