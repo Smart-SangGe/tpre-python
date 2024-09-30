@@ -186,7 +186,7 @@ wallet_pk = "ae66ae3711a69079efd3d3e9b55f599ce7514eb29dfe4f9551404d3f361438c6"
 
 
 if __name__ == "__main__":
-    import uvicorn  # pylint: disable=e0401
+    import uvicorn
 
     threading.Thread(target=log_message).start()
 
