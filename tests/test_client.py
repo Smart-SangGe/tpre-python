@@ -1,12 +1,13 @@
 import os
 import pytest
-import sqlite3
-import respx
-import httpx
 from fastapi.testclient import TestClient
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from client import app, init_db, clean_env, get_own_ip
 
 client = TestClient(app)
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown():
@@ -16,19 +17,19 @@ def setup_and_teardown():
     # 清理测试环境
     clean_env()
 
+
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Hello, World!"}
 
+
 def test_receive_messages():
-    message = {
-        "Tuple": (((1, 2), (3, 4), 5, (6, 7)), 8),
-        "ip": "127.0.0.1"
-    }
+    message = {"Tuple": (((1, 2), (3, 4), 5, (6, 7)), 8), "ip": "127.0.0.1"}
     response = client.post("/receive_messages", json=message)
     assert response.status_code == 200
     assert response.json().get("detail") == "Message received"
+
 
 # @respx.mock
 # def test_request_message():
@@ -56,21 +57,20 @@ def test_receive_messages():
 #     assert "threshold" in response.json()
 #     assert "public_key" in response.json()
 
+
 def test_get_pk():
     response = client.get("/get_pk")
     assert response.status_code == 200
     assert "pkx" in response.json()
     assert "pky" in response.json()
 
+
 def test_recieve_pk():
-    pk_data = {
-        "pkx": "123",
-        "pky": "456",
-        "ip": "127.0.0.1"
-    }
+    pk_data = {"pkx": "123", "pky": "456", "ip": "127.0.0.1"}
     response = client.post("/recieve_pk", json=pk_data)
     assert response.status_code == 200
     assert response.json() == {"message": "save pk in database"}
+
 
 if __name__ == "__main__":
     pytest.main()
