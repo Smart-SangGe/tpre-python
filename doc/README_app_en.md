@@ -11,8 +11,13 @@ docker run -it -p 8000-8002:8000-8002 -v ~/mimajingsai/src:/app -e HOST_IP=124.7
 ```bash
 tpre3: docker run -it -p 8000:8000 -p 8001:8001 -p 8002:8002 -v ~/mimajingsai:/app -e HOST_IP=60.204.233.103 git.mamahaha.work/sangge/tpre:base bash
 ```
+## Deploy contract
+You should deploy the contract yourself in src/logger.sol using remix or any CLI-tools and replace the contract address in src/node.py with your actual address.
+
+[Deployment document](https://remix-ide.readthedocs.io/zh-cn/latest/create_deploy.html)
 
 ## Start application
+You should replace the wallet address/privateKey in src/node.py with your own wallet address/privateKey.
 
 ```bash
 nohup python server.py &
