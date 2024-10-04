@@ -1,9 +1,24 @@
+import sys
+import os
+import hashlib
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from tpre import (
-    hash2, hash3, hash4, multiply, g, sm2p256v1,
-    GenerateKeyPair, Encrypt, Decrypt, GenerateReKey,
-    Encapsulate, ReEncrypt, DecryptFrags
+    hash2,
+    hash3,
+    hash4,
+    multiply,
+    g,
+    sm2p256v1,
+    GenerateKeyPair,
+    Encrypt,
+    Decrypt,
+    GenerateReKey,
+    Encapsulate,
+    ReEncrypt,
+    DecryptFrags,
+    MergeCFrag,
 )
-from tpre import MergeCFrag
 import random
 import unittest
 
@@ -59,12 +74,14 @@ class TestHash4(unittest.TestCase):
         self.assertLess(digest, sm2p256v1.N)
 
 
-# class TestGenerateKeyPair(unittest.TestCase):
-#     def test_key_pair(self):
-#         public_key, secret_key = GenerateKeyPair()
-#         self.assertIsInstance(public_key, tuple)
-#         self.assertIsInstance(secret_key, int)
-#         self.assertEqual(len(public_key), 2)
+class TestGenerateKeyPair(unittest.TestCase):
+    def test_key_pair(self):
+        public_key, secret_key = GenerateKeyPair()
+        self.assertIsInstance(public_key, tuple)
+        self.assertEqual(len(public_key), 2)
+        self.assertIsInstance(secret_key, int)
+        self.assertLess(secret_key, sm2p256v1.N)
+        self.assertGreater(secret_key, 0)
 
 
 # class TestEncryptDecrypt(unittest.TestCase):
@@ -74,18 +91,22 @@ class TestHash4(unittest.TestCase):
 
 #     def test_encrypt_decrypt(self):
 #         encrypted_message = Encrypt(self.public_key, self.message)
-#         decrypted_message = Decrypt(self.secret_key, encrypted_message)
+#         # 使用 SHA-256 哈希函数确保密钥为 16 字节
+#         secret_key_hash = hashlib.sha256(self.secret_key.to_bytes((self.secret_key.bit_length() + 7) // 8, 'big')).digest()
+#         secret_key_int = int.from_bytes(secret_key_hash[:16], 'big')  # 取前 16 字节并转换为整数
+
+#         decrypted_message = Decrypt(secret_key_int, encrypted_message)
 #         self.assertEqual(decrypted_message, self.message)
 
 
-# class TestGenerateReKey(unittest.TestCase):
-#     def test_generate_rekey(self):
-#         sk_A = random.randint(0, sm2p256v1.N - 1)
-#         pk_B, _ = GenerateKeyPair()
-#         id_tuple = tuple(random.randint(0, sm2p256v1.N - 1) for _ in range(5))
-#         rekey = GenerateReKey(sk_A, pk_B, 5, 3, id_tuple)
-#         self.assertIsInstance(rekey, list)
-#         self.assertEqual(len(rekey), 5)
+class TestGenerateReKey(unittest.TestCase):
+    def test_generate_rekey(self):
+        sk_A = random.randint(0, sm2p256v1.N - 1)
+        pk_B, _ = GenerateKeyPair()
+        id_tuple = tuple(random.randint(0, sm2p256v1.N - 1) for _ in range(5))
+        rekey = GenerateReKey(sk_A, pk_B, 5, 3, id_tuple)
+        self.assertIsInstance(rekey, list)
+        self.assertEqual(len(rekey), 5)
 
 
 class TestEncapsulate(unittest.TestCase):
@@ -97,18 +118,18 @@ class TestEncapsulate(unittest.TestCase):
         self.assertEqual(len(capsule), 3)
 
 
-# class TestReEncrypt(unittest.TestCase):
-#     def test_reencrypt(self):
-#         sk_A = random.randint(0, sm2p256v1.N - 1)
-#         pk_B, _ = GenerateKeyPair()
-#         id_tuple = tuple(random.randint(0, sm2p256v1.N - 1) for _ in range(5))
-#         rekey = GenerateReKey(sk_A, pk_B, 5, 3, id_tuple)
-#         pk_A, _ = GenerateKeyPair()
-#         message = b"Hello, world!"
-#         encrypted_message = Encrypt(pk_A, message)
-#         reencrypted_message = ReEncrypt(rekey[0], encrypted_message)
-#         self.assertIsInstance(reencrypted_message, tuple)
-#         self.assertEqual(len(reencrypted_message), 2)
+class TestReEncrypt(unittest.TestCase):
+    def test_reencrypt(self):
+        sk_A = random.randint(0, sm2p256v1.N - 1)
+        pk_B, _ = GenerateKeyPair()
+        id_tuple = tuple(random.randint(0, sm2p256v1.N - 1) for _ in range(5))
+        rekey = GenerateReKey(sk_A, pk_B, 5, 3, id_tuple)
+        pk_A, _ = GenerateKeyPair()
+        message = b"Hello, world!"
+        encrypted_message = Encrypt(pk_A, message)
+        reencrypted_message = ReEncrypt(rekey[0], encrypted_message)
+        self.assertIsInstance(reencrypted_message, tuple)
+        self.assertEqual(len(reencrypted_message), 2)
 
 
 # class TestDecryptFrags(unittest.TestCase):
@@ -123,9 +144,15 @@ class TestEncapsulate(unittest.TestCase):
 #         reencrypted_message = ReEncrypt(rekey[0], encrypted_message)
 #         cfrags = [reencrypted_message]
 #         merged_cfrags = MergeCFrag(cfrags)
-#         decrypted_message = DecryptFrags(sk_B, pk_B, pk_A, merged_cfrags)
+
+#         self.assertIsNotNone(merged_cfrags)
+
+#         sk_B_hash = hashlib.sha256(sk_B.to_bytes((sk_B.bit_length() + 7) // 8, 'big')).digest()
+#         sk_B_int = int.from_bytes(sk_B_hash[:16], 'big')  # 取前 16 字节并转换为整数
+
+#         decrypted_message = DecryptFrags(sk_B_int, pk_B, pk_A, merged_cfrags)
 #         self.assertEqual(decrypted_message, message)
 
 
-# if __name__ == "__main__":
-#     unittest.main()
+if __name__ == "__main__":
+    unittest.main()
