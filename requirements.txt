@@ -2,3 +2,4 @@ gmssl-python>=2.2.2,<3.0.0
 fastapi
 uvicorn
 requests
+web3
