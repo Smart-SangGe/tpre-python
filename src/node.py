@@ -25,7 +25,7 @@ async def lifespan(_: FastAPI):
 message_list = []
 
 app = FastAPI(lifespan=lifespan)
-server_address = "http://60.204.236.38:8000/server"
+server_address = os.environ.get("server_address")
 id = 0
 ip = ""
 client_ip_src = ""  # 发送信息用户的ip
