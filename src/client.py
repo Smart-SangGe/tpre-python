@@ -89,13 +89,8 @@ def init_db():
 
 # load config from config file
 def init_config():
-    import configparser
-
     global server_address
-    config = configparser.ConfigParser()
-    config.read("client.ini")
-
-    server_address = config["settings"]["server_address"]
+    server_address = os.environ.get("server_address")
 
 
 # execute on exit
@@ -469,7 +464,7 @@ async def recieve_pk(pk: pk_model):
 
 pk = (0, 0)
 sk = 0
-server_address = str
+server_address = os.environ.get("server_address")
 node_response = False
 message = bytes
 local_ip = get_own_ip()
