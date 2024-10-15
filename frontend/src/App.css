@@ -1,29 +1,114 @@
+@keyframes glow-border {
+  0% {
+    box-shadow: inset 0 0 0 2px #00e6e6;
+  }
+  25% {
+    box-shadow: inset 0 0 0 2px #00e6e6, 2px 0 0 0 #00e6e6;
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px #00e6e6, 2px 0 0 0 #00e6e6, 0 2px 0 0 #00e6e6;
+  }
+  75% {
+    box-shadow: inset 0 0 0 2px #00e6e6, 2px 0 0 0 #00e6e6, 0 2px 0 0 #00e6e6, -2px 0 0 0 #00e6e6;
+  }
+  100% {
+    box-shadow: inset 0 0 0 2px #00e6e6, 2px 0 0 0 #00e6e6, 0 2px 0 0 #00e6e6, -2px 0 0 0 #00e6e6, 0 -2px 0 0 #00e6e6;
+  }
+}
+
+body {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+}
+
 .App-header {
-  background-color: #282c34;
-  padding: 20px;
-  color: white;
-}
-
-.App {
   text-align: center;
-  margin: 20px;
+  padding: 20px;
 }
 
-table {
-  margin: 20px auto;
-  border-collapse: collapse;
+h1 {
+  color: #eff4f0;
+  font-size: 4em;
+  margin-bottom: 20px;
 }
 
-table, th, td {
-  border: 1px solid #ccc;
+h2 {
+  color: #2196f3;
+  font-size: 2em;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+h3 {
+  color: #ff9800;
+  font-size: 1.75em;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+h4 {
+  color: #f44336;
+  font-size: 1.5em;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+input, button {
+  margin: 10px 0;
   padding: 10px;
+  border: none;
+  border-radius: 5px;
 }
 
-th {
-  background-color: #f0f0f0;
+input {
+  width: 80%;
+  max-width: 300px;
+}
+
+button {
+  background-color: #2196f3;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #1976d2;
+}
+
+section {
+  background-color: #333333;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 10px;
+  animation: glow-border 4s infinite;
 }
 
 .log-info {
-  width: 80%;
-  margin: 20px auto;
+  background-color: #444444;
+  color: #ffffff;
+  padding: 10px;
+  border-radius: 5px;
+  animation: glow-border 4s infinite;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  background-color: #444444;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.left-panel, .right-panel {
+  width: 48%;
 }
