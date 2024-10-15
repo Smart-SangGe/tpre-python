@@ -21,7 +21,6 @@ from node import (
     init,
     clear,
     send_user_des_message,
-    ip,
     id,
 )
 
@@ -34,26 +33,23 @@ server_address = "http://60.204.236.38:8000/server"
 
 class TestGetLocalIP(unittest.TestCase):
 
-    os.environ["HOST_IP"] = "60.204.193.58"  # 模拟设置 HOST_IP 环境变量
-
     def test_get_ip_from_env(self):
-        global ip
-        # 调用被测函数
-        get_local_ip()
+        os.environ["HOST_IP"] = "60.204.193.58"  # 模拟设置 HOST_IP 环境变量
+        ip = get_local_ip()
         # 检查函数是否正确获取到 HOST_IP
         self.assertEqual(ip, "60.204.193.58")
 
     @patch("socket.socket")  # Mock socket 连接行为
-    @patch.dict("os.environ", {})  # 模拟没有 HOST_IP 环境变量
     def test_get_ip_from_socket(self, mock_socket):
-        global ip
+        os.environ.pop("HOST_IP", None)
+
         # 模拟 socket 返回的 IP 地址
         mock_socket_instance = MagicMock()
         mock_socket.return_value = mock_socket_instance
         mock_socket_instance.getsockname.return_value = ("110.41.155.96", 0)
 
         # 调用被测函数
-        get_local_ip()
+        ip = get_local_ip()
 
         # 确认 socket 被调用过
         mock_socket_instance.connect.assert_called_with(("8.8.8.8", 80))

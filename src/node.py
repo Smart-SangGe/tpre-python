@@ -51,8 +51,7 @@ def send_ip():
 
 
 # 用环境变量获取本机ip
-def get_local_ip():
-    global ip
+def get_local_ip() -> str | None:
     ip = os.environ.get("HOST_IP")
     if not ip:  # 如果环境变量中没有IP
         try:
@@ -61,12 +60,16 @@ def get_local_ip():
             s.connect(("8.8.8.8", 80))  # 通过连接Google DNS获取IP
             ip = str(s.getsockname()[0])
             s.close()
+            return ip
         except IndexError:
             raise ValueError("Unable to get IP")
+    else:
+        return ip
 
 
 def init():
-    get_local_ip()
+    global ip
+    ip = get_local_ip()
     send_ip()
     asyncio.create_task(send_heartbeat_internal())
     print("Finish init")
