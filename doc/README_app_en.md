@@ -3,9 +3,9 @@
 ## Run docker
 
 ```bash
-docker run -it -p 8000-8002:8000-8002 -v ~/mimajingsai/src:/app -e HOST_IP=60.204.193.58 git.mamahaha.work/sangge/tpre:base bash  
-docker run -it -p 8000-8002:8000-8002 -v ~/mimajingsai/src:/app -e HOST_IP=119.3.125.234 git.mamahaha.work/sangge/tpre:base bash 
-docker run -it -p 8000-8002:8000-8002 -v ~/mimajingsai/src:/app -e HOST_IP=124.70.165.73 git.mamahaha.work/sangge/tpre:base bash 
+docker run -it -p 8000-8002:8000-8002 -v ~/tpre-python/src:/app -e HOST_IP=192.168.8.57 -e server_address=192.168.8.57:8000 git.mamahaha.work/sangge/tpre:base bash  
+docker run -it -p 8000-8002:8000-8002 -v ~/tpre-python/src:/app -e HOST_IP=119.3.125.234 git.mamahaha.work/sangge/tpre:base bash 
+docker run -it -p 8000-8002:8000-8002 -v ~/tpre-python/src:/app -e HOST_IP=124.70.165.73 git.mamahaha.work/sangge/tpre:base bash 
 ```
 
 ```bash

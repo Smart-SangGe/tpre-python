@@ -8,7 +8,7 @@ COPY requirements.txt /app/
 # 根据目标平台复制相应架构的库文件
 #COPY lib/${TARGETPLATFORM}/* /lib/
 
-COPY lib/* /lib/
+COPY lib/* /usr/local/lib/
 
 WORKDIR /app
 
@@ -16,3 +16,4 @@ RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 RUN pip install --index-url https://git.mamahaha.work/api/packages/sangge/pypi/simple/ ecc-rs
 
+RUN ldconfig
