@@ -17,3 +17,4 @@ src/tpre.cpython-311-x86_64-linux-gnu.so
 venv
 lib
 include
+/frontend/node_modules/

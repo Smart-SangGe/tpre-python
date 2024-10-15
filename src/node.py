@@ -42,12 +42,17 @@ logger = logging.getLogger("uvicorn")
 
 # 向中心服务器发送自己的IP地址,并获取自己的id
 def send_ip():
-    url = server_address + "/get_node?ip=" + ip  # type: ignore
+    url = f"http://{server_address}/server/get_node?ip={ip}"  # 添加 http:// 协议
     # ip = get_local_ip() # type: ignore
-    global id
-    id = requests.get(url, timeout=3)
-    logger.info(f"中心服务器返回节点ID为: {id}")
-    print("中心服务器返回节点ID为: ", id)
+    try:
+        response = requests.get(url, timeout=3)
+        response.raise_for_status()  # 检查请求是否成功
+        data = response.json()  # 将响应内容解析为 JSON 格式
+        global id
+        id = data.get("id")  # 假设返回的 JSON 包含 id 字段
+        logger.info(f"中心服务器返回节点ID为: {id}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"请求中心服务器失败: {e}")
 
 
 # 用环境变量获取本机ip
@@ -85,7 +90,7 @@ def clear():
 async def send_heartbeat_internal() -> None:
     timeout = 30
     global ip
-    url = server_address + "/heartbeat?ip=" + ip  # type: ignore
+    url = f"http://{server_address}/server/heartbeat?ip={ip}"  # 添加 http:// 协议
     while True:
         # print('successful send my_heart')
         try:
@@ -191,6 +196,6 @@ wallet_pk = "ae66ae3711a69079efd3d3e9b55f599ce7514eb29dfe4f9551404d3f361438c6"
 if __name__ == "__main__":
     import uvicorn
 
-    threading.Thread(target=log_message).start()
+    # threading.Thread(target=log_message).start()
 
     uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True, log_level="debug")
