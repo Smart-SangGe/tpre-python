@@ -1,4 +1,15 @@
-from tpre import *
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+from tpre import (
+    GenerateKeyPair,
+    Encrypt,
+    GenerateReKey,
+    ReEncrypt,
+    MergeCFrag,
+    DecryptFrags,
+)
 import time
 
 N = 20
@@ -50,7 +61,7 @@ print(f"重加密算法运行时间:{elapsed_time}秒")
 
 # 9
 start_time = time.time()
-cfrags = mergecfrag(cfrag_cts)
+cfrags = MergeCFrag(cfrag_cts)
 m = DecryptFrags(sk_b, pk_b, pk_a, cfrags)
 end_time = time.time()
 elapsed_time = end_time - start_time

@@ -1,0 +1,31 @@
+version: "3"
+services:
+  server:
+    image: git.mamahaha.work/sangge/tpre:base
+    volumes:
+      - ./src:/app
+    environment:
+      - server_address=http://server:8000
+    entrypoint:
+      - python
+      - server.py
+
+  node:
+    image: git.mamahaha.work/sangge/tpre:base
+    volumes:
+      - ./src:/app
+    environment:
+      - server_address=http://server:8000
+    entrypoint:
+      - python
+      - node.py
+
+  client:
+    image: git.mamahaha.work/sangge/tpre:base
+    volumes:
+      - ./src:/app
+    environment:
+      - server_address=http://server:8000
+    entrypoint:
+      - python
+      - client.py

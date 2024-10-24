@@ -1,3 +1,6 @@
 [submodule "gmssl"]
 	path = gmssl
 	url = https://github.com/guanzhi/GmSSL.git
+[submodule "ecc_rs"]
+	path = ecc_rs
+	url = https://git.mamahaha.work/sangge/ecc_rs.git

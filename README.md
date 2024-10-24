@@ -2,7 +2,7 @@
 
 本项目是全国密码学竞赛设计项目，该项目是使用python实现tpre算法
 
-## 项目原理  
+## 项目原理
 
 使用国密算法实现分布式代理重加密tpre
 
@@ -18,7 +18,7 @@
 ├── README_en.md  
 ├── README.md  
 ├── requirements.txt  
-└── src (程序源码)  
+└── src (程序源码)
 
 ## 环境依赖
 
@@ -30,31 +30,39 @@
 - Windows (需要自行安装gmssl的共享库)
 
 该项目依赖以下软件：  
-python 3.11
-gmssl
-gmssl-python
+python 3.12
+gmssl v3.1.1
+gmssl-python 2.2.2
 
 ### Docker 版本安装
 
 ```bash
-apt update && apt install mosh -y 
+apt update && apt install mosh -y
 chmod +x install_docker.sh
 ./install_docker.sh
 ```
 
 ### 开发环境docker版本信息
 
-docker 版本:  
+docker 版本:
 
-- 版本:           24.0.5  
-- API 版本:       1.43  
-- Go 版本:        go1.20.6  
+- 版本: 24.0.5
+- API 版本: 1.43
+- Go 版本: go1.20.6
 
 ## 安装步骤
 
 ### 安装前的准备
 
 本项目依赖gmssl，所以请提前安装好。访问 [GmSSL](https://github.com/guanzhi/GmSSL) 可以看到如何安装。
+
+本项目也提供了submodule的方式，可以直接使用
+
+```bash
+git clone --recurse-submodules https://git.mamahaha.work/sangge/tpre-python.git
+chmod +x install_gmssl.sh
+./install_docker.sh
+```
 
 然后安装必要的python库
 
@@ -68,7 +76,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```bash
 docker build . -f basedockerfile -t git.mamahaha.work/sangge/tpre:base
-(或者 docker pull git.mamahaha.work/sangge/tpre:base)  
+(或者 docker pull git.mamahaha.work/sangge/tpre:base)
 docker build . -t your_image_name
 ```
 
@@ -82,7 +90,7 @@ docker pull git.mamahaha.work/sangge/tpre:latest
 
 详细说明查看开发文档 [docs](doc/README_app_en.md)
 
-## 参考文献  
+## 参考文献
 
 [TPRE Algorithm Blog Post](https://www.cnblogs.com/pam-sh/p/17364656.html#tprelib%E7%AE%97%E6%B3%95)  
 [Gmssl-python library](https://github.com/GmSSL/GmSSL-Python)

@@ -3,21 +3,21 @@ name: Test CI
 on:
   push:
     paths:
-      - 'src/**'
+      - "src/**"
 
 jobs:
   test:
     name: test speed
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest
 
     container:
       image: catthehacker/ubuntu:act-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: https://git.mamahaha.work/actions/checkout@v3
 
-    - name: Run script in Docker container
-      run: |
-        ls $PWD/src
-        docker run --rm -v .:/app git.mamahaha.work/sangge/tpre:base ls
+    # - name: Run script in Docker container
+    #   run: |
+    #     ls $PWD/src
+    #     docker run --rm -v .:/app git.mamahaha.work/sangge/tpre:base ls

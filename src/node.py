@@ -1,25 +1,31 @@
-from fastapi import FastAPI, Request, HTTPException
-import requests
-from contextlib import asynccontextmanager
-import socket
 import asyncio
-from pydantic import BaseModel
-from tpre import *
-import os
-from typing import Any, Tuple
-import base64
+import json
 import logging
+import os
+import socket
+import threading
+import time
+from contextlib import asynccontextmanager
+
+import requests
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+from eth_logger import call_eth_logger
+from tpre import ReEncrypt, capsule
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     init()
     yield
     clear()
 
 
+message_list = []
+
 app = FastAPI(lifespan=lifespan)
-server_address = "http://60.204.236.38:8000/server"
+server_address = os.environ.get("server_address")
 id = 0
 ip = ""
 client_ip_src = ""  # 发送信息用户的ip
@@ -36,17 +42,21 @@ logger = logging.getLogger("uvicorn")
 
 # 向中心服务器发送自己的IP地址,并获取自己的id
 def send_ip():
-    url = server_address + "/get_node?ip=" + ip  # type: ignore
+    url = f"http://{server_address}/server/get_node?ip={ip}"  # 添加 http:// 协议
     # ip = get_local_ip() # type: ignore
-    global id
-    id = requests.get(url, timeout=3)
-    logger.info(f"中心服务器返回节点ID为: {id}")
-    print("中心服务器返回节点ID为: ", id)
+    try:
+        response = requests.get(url, timeout=3)
+        response.raise_for_status()  # 检查请求是否成功
+        data = response.json()  # 将响应内容解析为 JSON 格式
+        global id
+        id = data.get("id")  # 假设返回的 JSON 包含 id 字段
+        logger.info(f"中心服务器返回节点ID为: {id}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"请求中心服务器失败: {e}")
 
 
 # 用环境变量获取本机ip
-def get_local_ip():
-    global ip
+def get_local_ip() -> str | None:
     ip = os.environ.get("HOST_IP")
     if not ip:  # 如果环境变量中没有IP
         try:
@@ -55,12 +65,16 @@ def get_local_ip():
             s.connect(("8.8.8.8", 80))  # 通过连接Google DNS获取IP
             ip = str(s.getsockname()[0])
             s.close()
-        except:
+            return ip
+        except IndexError:
             raise ValueError("Unable to get IP")
+    else:
+        return ip
 
 
 def init():
-    get_local_ip()
+    global ip
+    ip = get_local_ip()
     send_ip()
     asyncio.create_task(send_heartbeat_internal())
     print("Finish init")
@@ -76,12 +90,12 @@ def clear():
 async def send_heartbeat_internal() -> None:
     timeout = 30
     global ip
-    url = server_address + "/heartbeat?ip=" + ip  # type: ignore
+    url = f"http://{server_address}/server/heartbeat?ip={ip}"  # 添加 http:// 协议
     while True:
         # print('successful send my_heart')
         try:
             requests.get(url, timeout=3)
-        except:
+        except requests.exceptions.RequestException:
             logger.error("Central server error")
             print("Central server error")
 
@@ -119,6 +133,17 @@ async def user_src(message: Req):
     capsule = message.capsule
     ct = message.ct
 
+    payload = {
+        "source_ip": source_ip,
+        "dest_ip": dest_ip,
+        "capsule": capsule,
+        "ct": ct,
+        "rk": message.rk,
+    }
+    # 将消息详情记录到区块链
+    global message_list
+    message_list.append(payload)
+
     byte_length = (ct.bit_length() + 7) // 8
     capsule_ct = (capsule, ct.to_bytes(byte_length))
 
@@ -139,7 +164,9 @@ async def user_src(message: Req):
     return HTTPException(status_code=200, detail="message recieved")
 
 
-async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # 发送消息给用户2
+async def send_user_des_message(
+    source_ip: str, dest_ip: str, re_message
+):  # 发送消息给用户2
     data = {"Tuple": re_message, "ip": source_ip}  # 类型不匹配
 
     # 发送 HTTP POST 请求
@@ -151,7 +178,24 @@ async def send_user_des_message(source_ip: str, dest_ip: str, re_message):  # �
     print("send stauts:", response.text)
 
 
+def log_message():
+    while True:
+        global message_list
+        payload = json.dumps(message_list)
+        message_list = []
+        call_eth_logger(wallet_address, wallet_pk, payload)
+        time.sleep(2)
+
+
+wallet_address = (
+    "0xe02666Cb63b3645E7B03C9082a24c4c1D7C9EFf6"  # 修改成要使用的钱包地址/私钥
+)
+wallet_pk = "ae66ae3711a69079efd3d3e9b55f599ce7514eb29dfe4f9551404d3f361438c6"
+
+
 if __name__ == "__main__":
-    import uvicorn  # pylint: disable=e0401
+    import uvicorn
+
+    # threading.Thread(target=log_message).start()
 
     uvicorn.run("node:app", host="0.0.0.0", port=8001, reload=True, log_level="debug")
