@@ -28,9 +28,10 @@ app.add_middleware(
 )
 
 # 配置日志文件路径
-log_dir = "logs"
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+
+log_dir = os.path.expanduser("~/tpre-python-logs")
+os.makedirs(log_dir, exist_ok=True)
+
 log_file = os.path.join(log_dir, "server_logs.log")
 
 # 全局日志配置
@@ -58,10 +59,10 @@ async def lifespan(_: FastAPI):
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 定义 frontend 的绝对路径
-frontend_dir = os.path.join(current_dir, "..", "frontend")
+frontend_dir = os.path.join(current_dir, "..", "frontend","build")
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/frontend", StaticFiles(directory="frontend/build"), name="frontend")
+app.mount("/frontend", StaticFiles(directory=frontend_dir), name="frontend")
 
 
 def init():
