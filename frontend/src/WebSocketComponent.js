@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import './App.css'; // 确保引入了样式文件
 
 const WebSocketComponent = () => {
     const [logs, setLogs] = useState([]);
@@ -16,7 +17,7 @@ const WebSocketComponent = () => {
         };
 
         wsRef.current.onmessage = (event) => {
-            setLogs((prevLogs) => [...prevLogs, event.data]);  // 直接加入收到的消息
+            setLogs((prevLogs) => [...prevLogs, JSON.parse(event.data)]);  // 解析 JSON 数据
         };
 
         wsRef.current.onerror = (error) => {
@@ -50,14 +51,18 @@ const WebSocketComponent = () => {
 
     return (
         <div>
-            <h2>The logs</h2>
-            <div
-                className="log-info"
-                style={{ height: '550px', overflowY: 'scroll', backgroundColor: 'rgb(32, 28, 28)', padding: '10px' }}
-            >
-                {logs.map((log, index) => (
-                    <p key={index} style={{ margin: '5px 0' }}>{log}</p>
-                ))}
+            <h2 className="glow">The logs</h2>
+            <p>这里显示服务器的日志信息：</p>
+            <div className="log-info">
+                {logs.map((log, index) => {
+                    const [timestamp, message] = log.message.split(' - ', 2);
+                    return (
+                        <div key={index} className="log-entry">
+                            <span className="log-timestamp">{timestamp}</span>
+                            <span className="log-message"> - {message}</span>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
