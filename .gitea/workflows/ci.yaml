@@ -7,6 +7,10 @@ on:
   #     - "src/**"
   #
 
+env:
+  REGISTRY: git.mamahaha.work
+  IMAGE_NAME: tpre
+
 jobs:
   test:
     name: test speed
