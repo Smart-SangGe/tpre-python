@@ -1,9 +1,11 @@
 name: Test CI
 
 on:
-  push:
-    paths:
-      - "src/**"
+  push
+  # push:
+  #   paths:
+  #     - "src/**"
+  #
 
 jobs:
   test:
