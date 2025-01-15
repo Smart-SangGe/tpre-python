@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "basedockerfile"
+      - ".gitea/workflows/build_image.yaml"
   schedule:
     - cron: "0 0 1 * *" # 每月1号00:00执行
   workflow_dispatch: # 允许手动触发
