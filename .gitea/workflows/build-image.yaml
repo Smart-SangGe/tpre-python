@@ -4,9 +4,9 @@ on:
   push:
     paths:
       - "basedockerfile"
-      - ".gitea/workflows/build_image.yaml"
-  # schedule:
-  #   - cron: "0 0 1 * *" # 每月1号00:00执行
+      - ".gitea/workflows/build-image.yaml"
+  schedule:
+    - cron: "0 0 1 * *" # 每月1号00:00执行
 
 env:
   REGISTRY: git.mamahaha.work
@@ -15,9 +15,14 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    container:
+      image: catthehacker/ubuntu:act-latest
+
     steps:
       - name: Checkout repository
         uses: https://git.mamahaha.work/actions/checkout@v4
+        with:
+          submodules: "recursive"
 
       - name: Set up Docker Buildx
         uses: https://git.mamahaha.work/actions/setup-buildx-action@v3

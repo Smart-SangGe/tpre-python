@@ -1,15 +1,9 @@
 name: Test CI
 
 on:
-  push
-  # push:
-  #   paths:
-  #     - "src/**"
-  #
-
-env:
-  REGISTRY: git.mamahaha.work
-  IMAGE_NAME: tpre
+  push:
+    paths:
+      - "src/**"
 
 jobs:
   test:
@@ -27,31 +21,3 @@ jobs:
     #   run: |
     #     ls $PWD/src
     #     docker run --rm -v .:/app git.mamahaha.work/sangge/tpre:base ls
-
-  build-and-push:
-    runs-on: ubuntu-latest
-    container:
-      image: catthehacker/ubuntu:act-latest
-
-    steps:
-      - name: Checkout repository
-        uses: https://git.mamahaha.work/actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: https://git.mamahaha.work/actions/setup-buildx-action@v3
-
-      - name: Login to Private Registry
-        uses: https://git.mamahaha.work/actions/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-
-      - name: Build and push
-        uses: https://git.mamahaha.work/actions/build-push-action@v5
-        with:
-          context: .
-          file: basedockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/sangge/${{ env.IMAGE_NAME }}:base
