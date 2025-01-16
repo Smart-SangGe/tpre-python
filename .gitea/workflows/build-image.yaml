@@ -41,7 +41,9 @@ jobs:
       # 复制库文件
       - name: Copy library files
         run: |
+          pwd
           mkdir -p $GITHUB_WORKSPACE/lib
+          ls $GITHUB_WORKSPACE
           cd gmssl/build/bin
           cp libgmssl.so \
              libgmssl.so.3 \
