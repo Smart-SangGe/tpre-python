@@ -5,6 +5,7 @@ on:
     paths:
       - "basedockerfile"
       - ".gitea/workflows/build-image.yaml"
+      - "requirements.txt"
   schedule:
     - cron: "0 0 1 * *" # 每月1号00:00执行
 

@@ -1,10 +1,12 @@
 # tpre-python
 
-This project is designed for the National Cryptography Competition and is implemented in Python to execute the TPRE algorithm.
+This project is designed for the National Cryptography Competition
+and is implemented in Python to execute the TPRE algorithm.
 
 ## Project Principle
 
-The project uses the Chinese national standard cryptography algorithm to implement distributed proxy re-encryption (TPRE).
+The project uses the Chinese national standard cryptography algorithm
+to implement distributed proxy re-encryption (TPRE).
 
 ## Project Structure
 
@@ -13,6 +15,8 @@ The project uses the Chinese national standard cryptography algorithm to impleme
 ├── dockerfile (being used to build application)  
 ├── doc (development documents)  
 ├── gmssl (gmssl source code)  
+├── include (gmssl header files)  
+├── lib (gmssl shared lib)
 ├── LICENSE  
 ├── README_en.md  
 ├── README.md  

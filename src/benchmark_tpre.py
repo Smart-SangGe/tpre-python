@@ -1,10 +1,19 @@
-from tpre import *
+from tpre import (
+    GenerateKeyPair,
+    Encrypt,
+    GenerateReKey,
+    ReEncrypt,
+    MergeCFrag,
+    DecryptFrags,
+)
 import time
 import openpyxl
 
 # 初始化Excel工作簿和工作表
 wb = openpyxl.Workbook()
 ws = wb.active
+if ws is None:
+    raise Exception("无法创建Excel文件")
 ws.title = "算法性能结果"
 headers = [
     "门限值 N",
