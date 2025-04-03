@@ -1,6 +1,5 @@
 import sys
 import os
-import hashlib
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from tpre import (
@@ -84,19 +83,15 @@ class TestGenerateKeyPair(unittest.TestCase):
         self.assertGreater(secret_key, 0)
 
 
-# class TestEncryptDecrypt(unittest.TestCase):
-#     def setUp(self):
-#         self.public_key, self.secret_key = GenerateKeyPair()
-#         self.message = b"Hello, world!"
+class TestEncryptDecrypt(unittest.TestCase):
+    def setUp(self):
+        self.public_key, self.secret_key = GenerateKeyPair()
+        self.message = b"Hello, world!"
 
-#     def test_encrypt_decrypt(self):
-#         encrypted_message = Encrypt(self.public_key, self.message)
-#         # 使用 SHA-256 哈希函数确保密钥为 16 字节
-#         secret_key_hash = hashlib.sha256(self.secret_key.to_bytes((self.secret_key.bit_length() + 7) // 8, 'big')).digest()
-#         secret_key_int = int.from_bytes(secret_key_hash[:16], 'big')  # 取前 16 字节并转换为整数
-
-#         decrypted_message = Decrypt(secret_key_int, encrypted_message)
-#         self.assertEqual(decrypted_message, self.message)
+    def test_encrypt_decrypt(self):
+        encrypted_message = Encrypt(self.public_key, self.message)
+        decrypted_message = Decrypt(self.secret_key, encrypted_message)
+        self.assertEqual(decrypted_message, self.message)
 
 
 class TestGenerateReKey(unittest.TestCase):

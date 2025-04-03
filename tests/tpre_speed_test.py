@@ -1,5 +1,7 @@
 import sys
 import os
+import time
+
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from tpre import (
@@ -10,26 +12,25 @@ from tpre import (
     MergeCFrag,
     DecryptFrags,
 )
-import time
 
-N = 20
-T = N // 2
-print(f"当前门限值: N = {N}, T = {T}")
 
-for i in range(1, 10):
+def test_tpre_full_workflow_speed():
+    """测试TPRE完整工作流程的运行速度"""
+    N = 20
+    T = N // 2
+    print(f"当前门限值: N = {N}, T = {T}")
     total_time = 0
 
-    # 1
+    # 1. 密钥生成
     start_time = time.time()
     pk_a, sk_a = GenerateKeyPair()
-    m = b"hello world" * pow(10, i)
-    print(f"明文长度:{len(m)}")
+    m = b"hello world"
     end_time = time.time()
     elapsed_time = end_time - start_time
     total_time += elapsed_time
     print(f"密钥生成运行时间:{elapsed_time}秒")
 
-    # 2
+    # 2. 加密
     start_time = time.time()
     capsule_ct = Encrypt(pk_a, m)
     end_time = time.time()
@@ -37,10 +38,10 @@ for i in range(1, 10):
     total_time += elapsed_time
     print(f"加密算法运行时间:{elapsed_time}秒")
 
-    # 3
+    # 3. 接收方密钥生成
     pk_b, sk_b = GenerateKeyPair()
 
-    # 5
+    # 4. 重加密密钥生成
     start_time = time.time()
     id_tuple = tuple(range(N))
     rekeys = GenerateReKey(sk_a, pk_b, N, T, id_tuple)
@@ -49,10 +50,9 @@ for i in range(1, 10):
     total_time += elapsed_time
     print(f"重加密密钥生成算法运行时间:{elapsed_time}秒")
 
-    # 7
+    # 5. 重加密
     start_time = time.time()
     cfrag_cts = []
-
     for rekey in rekeys:
         cfrag_ct = ReEncrypt(rekey, capsule_ct)
         cfrag_cts.append(cfrag_ct)
@@ -61,14 +61,15 @@ for i in range(1, 10):
     total_time += elapsed_time
     print(f"重加密算法运行时间:{elapsed_time}秒")
 
-    # 9
+    # 6. 合并和解密
     start_time = time.time()
     cfrags = MergeCFrag(cfrag_cts)
-    m = DecryptFrags(sk_b, pk_b, pk_a, cfrags)
+    decrypted_m = DecryptFrags(sk_b, pk_b, pk_a, cfrags)
     end_time = time.time()
     elapsed_time = end_time - start_time
     total_time += elapsed_time
     print(f"解密算法运行时间:{elapsed_time}秒")
-    print("成功解密:")
-    print(f"算法总运行时间:{total_time}秒")
-    print()
+
+    # 验证解密结果
+    assert decrypted_m == m, "解密结果与原始消息不匹配"
+    print(f"成功解密: {decrypted_m}")
