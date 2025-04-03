@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tpre-python"
+version = "0.1.1"
+description = "tpre-python"
+authors = [
+  { name = "Liang Junyong", email = "liangjunyong06@gmail.com" },
+  { name = "Jiang Chao", email = "2384899431@qq.com" },
+  { name = "Deng Qinyu", email = "1016751306@qq.com" },
+  { name = "Ran Sitong", email = "2624758301@qq.com" },
+  { name = "Yu Haichuan", email = "haichuanyu243@gmail.com" },
+]
+requires-python = ">=3.8"
+dependencies = ["gmssl-python>=2.2.2,<3.0.0", "fastapi", "uvicorn", "requests"]
+
+[project.optional-dependencies]
+test = ["httpx", "pytest"]
+dev = ["httpx", "pytest", "pyright", "ruff"]

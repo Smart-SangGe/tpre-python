@@ -39,4 +39,4 @@ include
 *-blx.bib
 *.run.xml
 
-
+.coverage

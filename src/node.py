@@ -1,17 +1,13 @@
 import asyncio
-import json
 import logging
 import os
 import socket
-import threading
-import time
 from contextlib import asynccontextmanager
 
 import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from eth_logger import call_eth_logger
 from tpre import ReEncrypt, capsule
 
 
@@ -176,15 +172,6 @@ async def send_user_des_message(
 
     logger.info(f"send stauts: {response.text}")
     print("send stauts:", response.text)
-
-
-def log_message():
-    while True:
-        global message_list
-        payload = json.dumps(message_list)
-        message_list = []
-        call_eth_logger(wallet_address, wallet_pk, payload)
-        time.sleep(2)
 
 
 wallet_address = (
