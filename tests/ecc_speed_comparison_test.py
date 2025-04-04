@@ -15,14 +15,14 @@ def test_rust_vs_python_multiply():
     # Rust实现
     start_time = time.time()
     for _ in range(10):
-        _ = multiply(g, mul_times, 1)
+        _ = multiply(g, mul_times)
     rust_time = time.time() - start_time
     print(f"\nRust multiply 执行时间: {rust_time:.6f} 秒")
 
     # Python实现
     start_time = time.time()
     for _ in range(10):
-        _ = multiply(g, mul_times, 0)
+        _ = multiply(g, mul_times)
     python_time = time.time() - start_time
     print(f"Python multiply 执行时间: {python_time:.6f} 秒")
 
@@ -33,14 +33,14 @@ def test_rust_vs_python_add():
     # Rust实现
     start_time = time.time()
     for _ in range(10):
-        _ = add(g, g, 1)
+        _ = add(g, g)
     rust_time = time.time() - start_time
     print(f"\nRust add 执行时间: {rust_time:.6f} 秒")
 
     # Python实现
     start_time = time.time()
     for _ in range(10):
-        _ = add(g, g, 0)
+        _ = add(g, g)
     python_time = time.time() - start_time
     print(f"Python add 执行时间: {python_time:.6f} 秒")
 

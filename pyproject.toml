@@ -19,3 +19,6 @@ dependencies = ["gmssl-python>=2.2.2,<3.0.0", "fastapi", "uvicorn", "requests"]
 [project.optional-dependencies]
 test = ["httpx", "pytest"]
 dev = ["httpx", "pytest", "pyright", "ruff"]
+
+[tool.ruff]
+select = ["E", "F", "N", "B", "I", "C4", "UP", "SIM"]
