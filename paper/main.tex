@@ -1,0 +1,47 @@
+\documentclass[UTF8,twoside,zihao=-4,AutoFakeBold,scheme=chinese,openany]{ctexbook}
+
+
+% 输入配置文件，例如调用的宏包（公式，插图等）
+\input{latex_settings/custom-chinese}
+
+\begin{document}
+\pagestyle{empty}
+% 中文封面页
+\input{chapters/pagetitle-chinese}
+% 原创性声明
+\input{chapters/original}
+%% 中文摘要页,开始以罗马字母计页码
+\frontmatter
+\pagestyle{content}
+\input{chapters/abs-chinese}
+%% 英文摘要页
+\input{chapters/abs-english}
+
+%% 目录
+\pagestyle{headings}
+\tableofcontents
+% % \thispagestyle{MyStyle}
+\let\cleardoublepage\clearpage %latex消除空白页
+
+% ===============================
+% 开始章节写作,显示特定页眉页脚
+\mainmatter
+\pagestyle{plain}
+% 第1-7章
+\include{chapters/chapter01}
+\include{chapters/chapter02}
+\include{chapters/chapter03}
+\include{chapters/chapter04}
+\include{chapters/chapter05}
+
+\backmatter
+%================================
+% 参考文献
+\input{chapters/ref}
+% 致谢
+\include{chapters/thanks}
+% 附录
+\include{chapters/appden01}
+\include{chapters/appden02}
+%================================
+\end{document}

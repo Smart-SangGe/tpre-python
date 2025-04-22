@@ -1,0 +1,263 @@
+\chapter{系统设计与实现方案}
+\section{总体设计}
+随着数字经济和分布式系统的发展，数据安全流通和共享日益重要。
+本系统结合门限密码学与代理重加密技术，提出了一种面向分布式环境的代理重加密解决方案。
+该方案具有以下主要特点：
+
+\begin{itemize}
+	\item 基于国密算法，确保系统的安全性和合规性
+	\item 采用分布式架构，支持多节点协同工作
+	\item 实现高效的数据授权和共享机制
+	\item 保证数据隐私和完整性
+\end{itemize}
+
+
+系统整体架构包含以下主要组件：
+
+\begin{itemize}
+	\item 数据拥有方：负责数据的加密和密钥管理
+	\item 数据请求方：负责数据的解密和使用
+	\item 代理节点：执行重加密操作
+	\item 中心服务器：管理节点信息和协调通信
+	\item 数据存储：保存加密数据和相关元信息
+\end{itemize}
+
+
+\section{核心算法设计}
+\subsection{算法设计}
+
+基于国密算法的分布式代理重加密技术共包含6个核心算法，以下详细说明各算法的设计。
+假设数据持有方为Alice，接收方为Bob，代理重加密节点为node。
+
+\subsubsection{算法框架概述}
+
+\begin{enumerate}
+	\item \textbf{密钥生成算法} ($\mathsf{KeyGen}$)：
+	      \begin{itemize}
+		      \item 输入：系统参数
+		      \item 输出：Alice和Bob的公私钥对 $(pk_A,sk_A)$和$(pk_B,sk_B)$
+		      \item 功能：生成用户的公私钥对
+	      \end{itemize}
+
+	\item \textbf{重加密密钥生成算法} ($\mathsf{ReKeyGen}$)：
+	      \begin{itemize}
+		      \item 输入：
+		            \begin{itemize}
+			            \item Alice的私钥 $sk_A$
+			            \item Bob的公钥 $pk_B$
+			            \item 代理服务器节点数量 $n$
+			            \item 门限值 $t$
+		            \end{itemize}
+		      \item 输出：重加密密钥集合 $\{rk_i\}_{i=1}^n$
+		      \item 说明：$i$ 指代每个代理服务器节点的编号
+	      \end{itemize}
+
+	\item \textbf{加密算法} ($\mathsf{Encrypt}$)：
+	      \begin{itemize}
+		      \item 输入：
+		            \begin{itemize}
+			            \item Alice的公钥 $pk_A$
+			            \item 明文 $m$
+		            \end{itemize}
+		      \item 输出：密文 $c$
+		      \item 实现细节：
+		            \begin{itemize}
+			            \item 采用混合加密机制
+			            \item 使用SM4实现对称加密
+			            \item 对称密钥在加密过程中随机生成
+			            \item 使用SM3实现密钥派生函数KDF
+			            \item 公钥加密保护对称密钥
+		            \end{itemize}
+	      \end{itemize}
+
+	\item \textbf{解密算法} ($\mathsf{Decrypt}$)：
+	      \begin{itemize}
+		      \item 输入：
+		            \begin{itemize}
+			            \item Alice的私钥 $sk_A$
+			            \item 密文 $c$
+		            \end{itemize}
+		      \item 输出：明文 $m$
+		      \item 过程：
+		            \begin{itemize}
+			            \item 首先用私钥解密得到对称密钥
+			            \item 再用对称密钥解密获得明文
+		            \end{itemize}
+	      \end{itemize}
+
+	\item \textbf{重加密算法} ($\mathsf{ReEnc}$)：
+	      \begin{itemize}
+		      \item 输入：
+		            \begin{itemize}
+			            \item 重加密密钥片段 $rk_i$
+			            \item 密文 $c$
+		            \end{itemize}
+		      \item 输出：重加密密文 $c'$
+		      \item 执行：代理服务器节点进行重加密运算
+	      \end{itemize}
+
+	\item \textbf{重加密密文解密算法} ($\mathsf{ReDecrypt}$)：
+	      \begin{itemize}
+		      \item 输入：
+		            \begin{itemize}
+			            \item Bob的公钥 $pk_B$
+			            \item Bob的私钥 $sk_B$
+			            \item Alice的公钥 $pk_A$
+			            \item 重加密密文 $c'$
+		            \end{itemize}
+		      \item 输出：明文 $m$
+	      \end{itemize}
+\end{enumerate}
+
+\subsubsection{算法安全性考虑}
+
+系统的安全性基于以下几个方面：
+\begin{itemize}
+	\item 基于国密算法SM2、SM3、SM4的密码学安全性
+	\item 门限机制提供的分布式安全保障
+	\item 混合加密机制的效率与安全性平衡
+	\item 重加密过程中的数据保密性
+\end{itemize}
+
+\subsection{关键技术}
+系统采用了以下关键技术：
+
+\begin{itemize}
+	\item SM2椭圆曲线密码算法：用于非对称加密
+	\item SM3哈希算法：确保数据完整性
+	\item SM4分组密码：实现高效的对称加密
+	\item 门限密码技术：支持分布式密钥管理
+	\item 混合加密机制：结合对称和非对称加密优势
+\end{itemize}
+
+\section{实现细节}
+基于国密算法的分布式代理重加密技术共包含6个算法，分别为密钥对生成算法$KeyGen$、
+重加密密钥生成算法$ReKeyGen$、加密$Enc$、解密算法$Dec$、重加密算法$ReEnc$、
+重加密密文解密算法$ReDec$。
+
+假设数据持有方为Alice，接收方为Bob，代理重加密节点为node，具体算法框架如下：
+
+$KeyGen$：Alice和Bob随机生成各自公私钥对$(pk_A,sk_A)$和$(pk_B,sk_B)$；
+
+$ReKeyGen$：输入Alice的私钥$sk_A$，Bob的公钥$pk_B$，所有代理服务器节点数量$n$和门限$t$，
+输出重加密密钥集合$rk$。这里的$i$指的是代理服务器节点的$ID$；
+
+$Enc$：输入Alice的公钥$pk_A$和明文$m$，输出密文$ct$；这里并不是直接使用$pk_A$加密明文$m$，
+因为会导致性能过低问题，在底层加密时，使用的是对称加密算法，
+在本文中使用$SM4$实现对称加密算法。其对称密钥是在加密过程中随机产生，
+对称加密密钥由公钥加密保护；生成对称密钥时，需要用到密码哈希函数构建的密钥派生函数$KDF$，
+本文中使用$SM3$算法实现该$KDF$函数；
+
+$Dec$：输入Alice的私钥$sk_A$和密文$ct$，输出明文$m$；这里是加密算法的逆过程，
+即用$sk_A$解密得到对称加密密钥，再解密密文；
+
+$ReEnc$：代理服务器节点输入重加密密钥片段$rk_i$和密文$ct$，输出重加密密文$ct'$；
+
+$ReDec$：输入Bob的公钥$pk_B$和私钥$sk_B$，A的公钥$pk_A$，重加密密文$ct'$，输出明文$m$。基于国密算法的分布式代理重加密实现流程如图所示。
+
+密钥对生成算法$KeyGen$步骤如下：
+
+\begin{enumerate}
+	\item 选择适当的椭圆曲线参数和基点G
+	\item 随机生成私钥$sk$
+	\item 计算公钥$pk = sk * G$
+	\item 输出密钥对$(pk,sk)$
+\end{enumerate}
+
+重加密密钥生成算法$ReKeyGen$步骤如下：
+
+\begin{enumerate}
+	\item 输入Alice的私钥$sk_A$和Bob的公钥$pk_B$
+	\item 选择随机数$r$作为重加密密钥
+	\item 计算$rk = r * sk_A * pk_B$
+	\item 输出重加密密钥$rk$
+\end{enumerate}
+
+加密算法$Enc$步骤如下：
+
+\begin{enumerate}
+	\item 输入公钥$pk$和消息$m$
+	\item 生成随机会话密钥$k$
+	\item 使用$SM4$对称加密消息: $c_1 = SM4_k(m)$
+	\item 使用公钥加密会话密钥: $c_2 = pk * k$
+	\item 输出密文$(c_1,c_2)$
+\end{enumerate}
+
+解密算法$Dec$步骤如下：
+
+\begin{enumerate}
+	\item 输入私钥$sk$和密文$(c_1,c_2)$
+	\item 使用私钥恢复会话密钥: $k = c_2/sk$
+	\item 使用会话密钥解密消息: $m = SM4^{-1}_k(c_1)$
+	\item 输出明文$m$
+\end{enumerate}
+
+重加密算法$ReEnc$步骤如下：
+
+\begin{enumerate}
+	\item 输入重加密密钥$rk$和密文$(c_1,c_2)$
+	\item 重新加密会话密钥: $c_2' = rk * c_2$
+	\item 输出重加密密文$(c_1,c_2')$
+\end{enumerate}
+
+重加密密文解密算法$ReDec$步骤如下：
+
+\begin{enumerate}
+	\item 输入Bob的私钥$sk_B$和重加密密文$(c_1,c_2')$
+	\item 恢复会话密钥: $k = c_2'/sk_B$
+	\item 解密消息: $m = SM4^{-1}_k(c_1)$
+	\item 输出明文$m$
+\end{enumerate}
+
+\subsection{系统流程}
+
+\begin{enumerate}
+	\item 数据拥有方生成公私钥对并加密数据
+	\item 数据请求方向拥有方申请访问权限
+	\item 拥有方同意后生成重加密密钥片段
+	\item 代理节点执行重加密操作
+	\item 数据请求方接收并解密数据
+\end{enumerate}
+
+\subsection{关键模块}
+\subsubsection{密钥管理模块}
+\begin{itemize}
+	\item 实现公私钥对的生成和管理
+	\item 支持重加密密钥的分发和更新
+	\item 确保密钥的安全存储
+\end{itemize}
+
+\subsubsection{加解密模块}
+\begin{itemize}
+	\item 封装国密算法接口
+	\item 实现混合加密机制
+	\item 提供数据加解密服务
+\end{itemize}
+
+\subsubsection{代理重加密模块}
+\begin{itemize}
+	\item 执行重加密运算
+	\item 管理重加密密钥片段
+	\item 协调多节点操作
+\end{itemize}
+
+\subsubsection{通信模块}
+\begin{itemize}
+	\item 基于HTTP协议
+	\item 实现节点间安全通信
+	\item 支持异步数据传输
+\end{itemize}
+
+\section{安全性分析}
+系统的安全性主要体现在以下方面：
+\begin{itemize}
+	\item 基于国密算法的密码学安全性
+	\item 分布式架构降低单点故障风险
+	\item 门限机制提供容错能力
+	\item 完整性校验确保数据不被篡改
+	\item 访问控制保护数据隐私
+\end{itemize}
+
+\section{本章小结}
+本章详细介绍了系统的设计方案和实现细节，包括总体架构、核心算法、关键技术和具体实现。
+通过合理的系统设计和可靠的技术实现，确保了系统在分布式环境下能够安全高效地完成数据共享和授权管理任务

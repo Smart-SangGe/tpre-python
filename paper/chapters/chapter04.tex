@@ -1,0 +1,157 @@
+\chapter{系统测试与结果分析}
+
+\section{测试环境}
+
+\subsection{本地测试环境}
+
+本系统在以下环境中进行本地测试：
+
+\begin{table}[h]
+	% FIX:需要更新windows测试环境
+	\centering
+	\caption{本地系统环境}
+	\begin{tabular}{ll}
+		\hline
+		\textbf{计算机系统} & \textbf{版本}                               \\
+		\hline
+		处理器            & Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz \\
+		操作系统           & Windows 10                                \\
+		\hline
+		\textbf{软件}    & \textbf{版本}                               \\
+		\hline
+		Python         & 3.8.0                                     \\
+		gmssl          & 3.2.1                                     \\
+		SQLite         & 3.39.3                                    \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[h]
+	\centering
+	\caption{本地系统环境2}
+	\begin{tabular}{ll}
+		\hline
+		\textbf{计算机系统} & \textbf{版本}                      \\
+		\hline
+		处理器            & AMD Ryzen 5 4500U (6) @ 2.38 GHz \\
+		操作系统           & Kali GNU/Linux Rolling x86\_64   \\
+		\hline
+		\textbf{软件}    & \textbf{版本}                      \\
+		\hline
+		Python         & 3.13.3                           \\
+		gmssl          & 3.2.1                            \\
+		SQLite         & 3.39.3                           \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\subsection{云端测试环境}
+
+云端测试采用华为云服务器，具体配置如下：
+
+\begin{table}[h]
+	\centering
+	\caption{云端系统环境}
+	\begin{tabular}{ll}
+		\hline
+		\textbf{服务器} & \textbf{配置}   \\
+		\hline
+		规格           & 2vCPUs | 4GiB \\
+		\hline
+		\textbf{软件}  & \textbf{版本}   \\
+		\hline
+		Docker       & 24.0.5        \\
+		Redis        & 7.0.11        \\
+		Node.js      & 18.16.0       \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\section{功能测试}
+\subsection{密钥生成与管理测试}
+测试了系统的密钥生成和管理功能，包括：
+\begin{enumerate}
+	\item 公私钥对生成
+	\item 重加密密钥生成
+	\item 密钥分发和存储
+\end{enumerate}
+测试结果表明，系统能够正确生成和管理各类密钥，确保密钥的唯一性和安全性。
+
+\subsection{加密解密测试}
+对系统的加密解密功能进行了全面测试：
+\begin{enumerate}
+	\item 原始数据加密
+	\item 重加密操作
+	\item 密文合并
+	\item 解密验证
+\end{enumerate}
+测试结果显示，系统能够正确完成各类加解密操作，保证数据的机密性和完整性。
+
+\section{性能测试}
+
+\subsection{算法性能测试}
+
+在不同节点数(N)和门限值(T)配置下进行测试，主要测试指标包括：
+\begin{enumerate}
+	\item 算法总运行时间
+	\item 密钥生成时间
+	\item 加密算法时间
+	\item 重加密密钥生成时间
+	\item 重加密算法时间
+	\item 解密算法时间
+\end{enumerate}
+
+测试结果显示：
+\begin{enumerate}
+	% FIX: 需要进行大规模测试
+	\item 当N=20，T=10时，系统性能最优
+	\item 算法执行时间远小于1秒的性能要求
+	\item 随着节点数增加，系统仍保持良好的扩展性
+\end{enumerate}
+
+\subsection{系统响应时间测试}
+对系统在云端环境下的响应性能进行测试：
+\begin{enumerate}
+	\item 异步处理数据时间
+	\item 通信延迟
+	\item 并发处理能力
+\end{enumerate}
+测试结果表明系统具有良好的响应性能和并发处理能力。
+
+\section{安全性测试}
+\subsection{数据完整性测试}
+通过修改密文内容，验证系统的数据完整性保护机制：
+\begin{enumerate}
+	\item 测试结果显示系统能够有效检测数据篡改
+	\item 非法修改的数据无法通过完整性验证
+	\item 保证了数据在传输和存储过程中的完整性
+\end{enumerate}
+
+\subsection{访问控制测试}
+验证系统的访问控制机制：
+\begin{enumerate}
+	\item 使用错误的私钥进行解密
+	\item 使用不完整的重加密密钥片段
+	\item 测试unauthorized访问
+\end{enumerate}
+测试结果表明系统能够有效防止未授权访问。
+
+\section{测试结果分析}
+\subsection{性能分析}
+系统性能测试结果显示：
+\begin{enumerate}
+	\item 算法执行效率高，总运行时间<1s
+	\item 当门限T为节点数N的一半时，性能最优
+	\item 系统具有良好的可扩展性
+\end{enumerate}
+
+\subsection{安全性分析}
+安全性测试结果表明：
+\begin{enumerate}
+	\item 基于国密算法的加密方案安全可靠
+	\item 门限机制有效防止单点故障
+	\item 访问控制机制有效运行
+	\item 数据完整性得到保障
+\end{enumerate}\section{本章小结}
+
+通过全面的功能测试、性能测试和安全性测试，验证了系统的可靠性、高效性和安全性。测试结果表明，该系统能够满足分布式环境下的数据安全共享需求，具有良好的应用前景。系统在性能和安全性方面均达到了预期目标，为后续的实际部署应用奠定了基础。
