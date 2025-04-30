@@ -1,34 +1,280 @@
 %% 附录页
+\chapter{附录A\ \ \ \ 英文文献翻译}
 
-\chapter{附录A \ \ \ \  科技写作中非学术型低级错误的主要表现}
+% \begin{document}
 
-本附录主要针对学位论文写作或中文科技论文写作，供重庆邮电大学学位论文查非工作参考。
-未尽事宜，可参考重庆邮电大学论文写作要求、重庆邮电大学学报编辑部等国内期刊社、
-出版社的通用出版规定。
+\section{英文原文}
 
-推荐阅读《科学出版社作者编辑手册》、
-《科学道德与学风建设宣传参考大纲（试用本）》等写作指导性书籍或资料，
-可了解更多、更详尽的通用写作出版规范。
+\begin{center}
+	\Large\textbf{How to Share a Secret}
 
-\textcolor{red}{（注：对于一些不宜放入正文中，
-	但作为毕业设计（论文）又不可缺的组成部分或具有重要参考价值的内容，
-	可编入毕业设计(论文)的附录中，例如，公式的推演、源程序代码、附图等内容。
-	附录的内容为备选项目，作者可根据内容的需要决定附录的项目数，
-	用附录A、附录B方式编号。附录的篇幅不宜太多。
-	附录与主体部分一起编制页码。若附录部分有手工制作或复印件，
-	手工制作或复印件部分要装订在内但可以不计页码。附录的文字按照正文格式进行排版。）}
+	\vspace{0.5cm}
+	\large Adi Shamir\\
+	Massachusetts Institute of Technology
+\end{center}
 
-\textcolor{red}{(附：科技写作中非学术型低级错误的主要表现见 moban文件夹下)}
+\vspace{0.5cm}
 
-\textbf{代码效果演示：}
-\begin{python}
-	# 这是一段代码测试
-	def CQUPT():
-	print("Hello,CQUPT")
-	print("学长学长，给咱们讲讲3G芯片的故事呗。")
-	print("这是世界上第一枚0.13微米工艺的TD-SCDMA 3G手机基带芯片。"
-	+"它的诞生，标志着我国3G通信核心芯片等关键...")
-	CQUPT()
-\end{python}
-\newpage\quad %加一页，使得附录B第一页的页眉为 附录B
+In this paper we show how to divide data $D$ into $n$ pieces
+in such a way that $D$ is easily reconstructable from any $k$
+pieces, but even complete knowledge of $k - 1$ pieces reveals
+absolutely no information about $D$. This technique enables the
+construction of robust key management schemes for cryptographic
+systems that can function securely and reliably even when misfortunes
+destroy half the pieces and security breaches expose all
+but one of the remaining pieces.
 
+\vspace{0.3cm}
+\noindent\textbf{Key Words and Phrases:} cryptography, key management, interpolation
+
+\noindent\textbf{CR Categories:} 5:39, 5.6
+
+\subsection{Introduction}
+In [4], Liu considers the following problem:
+\begin{quote}
+	Eleven scientists are working on a secret project.
+	They wish to lock up the documents in a cabinet so that the
+	cabinet can be opened if and only if six or more of the
+	scientists are present. What is the smallest number of locks needed?
+	What is the smallest number of keys to the locks each scientist must carry?
+\end{quote}
+
+It is not hard to show that the minimal solution uses 462 locks and
+252 keys per scientist. These numbers are clearly impractical,
+and they become exponentially worse when the number of scientists increases.
+
+In this paper we generalize the problem to one in which the
+secret is some data $D$ (e.g., the safe combination) and in
+which nonmechanical solutions (which manipulate this data)
+are also allowed. Our goal is to divide $D$ into $n$ pieces $D_1, \ldots, D_n$ in such a way that:
+\begin{enumerate}
+	\item knowledge of any $k$ or more $D_i$ pieces makes $D$ easily computable;
+	\item knowledge of any $k - 1$ or fewer $D_i$ pieces leaves $D$ completely undetermined
+	      (in the sense that all its possible values are equally likely).
+\end{enumerate}
+
+Such a scheme is called a $(k, n)$ threshold scheme. Efficient threshold schemes
+can be very helpful in the management of cryptographic keys.
+In order to protect data we can encrypt it, but in order to protect
+the encryption key we need a different method (further encryptions change
+the problem rather than solve it). The most secure key management scheme
+keeps the key in a single, well-guarded location (a computer, a human brain,
+or a safe). This scheme is highly unreliable since a single misfortune
+(a computer breakdown, sudden death, or sabotage) can make the information
+inaccessible. An obvious solution is to store multiple copies of the key at
+different locations, but this increases the danger of security breaches
+(computer penetration, betrayal, or human errors). By using a $(k, n)$
+threshold scheme with $n = 2k - 1$ we get a very robust key management scheme:
+We can recover the original key even when $\lfloor n/2 \rfloor = k - 1$ of
+the $n$ pieces are destroyed, but our opponents cannot reconstruct the key
+even when security breaches expose $\lfloor n/2 \rfloor = k - 1$ of the remaining $k$ pieces.
+
+In other applications the tradeoff is not between secrecy and reliability,
+but between safety and convenience of use. Consider, for example,
+a company that digitally signs all its checks (see RSA [5]).
+If each executive is given a copy of the company's secret signature key,
+the system is convenient but easy to misuse. If the cooperation of all the
+company's executives is necessary in order to sign each check, the system
+is safe but inconvenient. The standard solution requires at least three
+signatures per check, and it is easy to implement with a $(3, n)$ threshold scheme.
+Each executive is given a small magnetic card with one $D_i$ piece,
+and the company's signature generating device accepts any three of them
+in order to generate (and later destroy) a temporary copy of the actual
+signature key $D$. The device does not contain any secret information and
+thus it need not be protected against inspection. An unfaithful executive
+must have at least two accomplices in order to forge the company's signature in this scheme.
+
+Threshold schemes are ideally suited to applications in which a group of
+mutually suspicious individuals with conflicting interests must cooperate.
+Ideally we would like the cooperation to be based on mutual consent,
+but the veto power this mechanism gives to each member can paralyze the
+activities of the group. By properly choosing the $k$ and $n$ parameters
+we can give any sufficiently large majority the authority to take some
+action while giving any sufficiently large minority the power to block it.
+
+\subsection{A Simple \texorpdfstring{$(k, n)$}{(k, n)} Threshold Scheme}
+Our scheme is based on polynomial interpolation: given $k$ points in the
+2-dimensional plane $(x_1, y_1), \ldots, (x_k, y_k)$, with distinct $x_i$'s,
+there is one and only one polynomial $q(x)$ of degree $k - 1$ such
+that $q(x_i) = y_i$ for all $i$. Without loss of generality, we can
+assume that the data $D$ is (or can be made) a number. To divide it into
+pieces $D_i$, we pick a random $k - 1$ degree polynomial
+$q(x) = a_0 + a_1x + \ldots + a_{k-1}x^{k-1}$ in which $a_0 = D$, and evaluate:
+
+$D_1 = q(1), \ldots, D_i = q(i), \ldots, D_n = q(n)$.
+
+Given any subset of $k$ of these $D_i$ values (together with their identifying indices),
+we can find the coefficients of $q(x)$ by interpolation, and then evaluate
+$D = q(0)$. Knowledge of just $k - 1$ of these values, on the other hand,
+does not suffice in order to calculate $D$.
+
+To make this claim more precise, we use modular arithmetic instead of real
+arithmetic. The set of integers modulo a prime number $p$ forms a field in
+which interpolation is possible. Given an integer valued data $D$, we pick
+a prime $p$ which is bigger than both $D$ and $n$.
+The coefficients $a_1 \ldots a_{k-1}$ in $q(x)$ are randomly chosen from a
+uniform distribution over the integers in $[0, p)$, and the values $D_1, \ldots, D_n$ are computed modulo $p$.
+
+Let us now assume that $k - 1$ of these $n$ pieces are revealed to an opponent.
+For each candidate value $D'$ in $[0, p)$ he can construct one and only one
+polynomial $q'(x)$ of degree $k - 1$ such that $q'(0) = D'$ and $q'(i) = D_i$ for
+the $k - 1$ given arguments. By construction, these $p$ possible polynomials
+are equally likely, and thus there is absolutely nothing the opponent can deduce
+about the real value of $D$.
+
+Efficient $O(n \log^2 n)$ algorithms for polynomial evaluation and interpolation
+are discussed in [1] and [3], but even the straightforward quadratic algorithms
+are fast enough for practical key management schemes. If the number $D$ is long,
+it is advisable to break it into shorter blocks of bits (which are handled separately)
+in order to avoid multiprecision arithmetic operations.
+The blocks cannot be arbitrarily short, since the smallest usable value
+of $p$ is $n + 1$ (there must be at least $n + 1$ distinct arguments
+in $[0, p)$ to evaluate $q(x)$ at). However, this is not a severe limitation
+since sixteen bit modulus (which can be handled by a cheap sixteen bit arithmetic unit)
+suffices for applications with up to 64,000 $D_i$ pieces.
+
+Some of the useful properties of this $(k, n)$ threshold scheme
+(when compared to the mechanical locks and keys solutions) are:
+
+\begin{enumerate}
+	\item The size of each piece does not exceed the size of the original data.
+	\item When $k$ is kept fixed, $D_i$ pieces can be dynamically added or deleted
+	      (e.g., when executives join or leave the company) without affecting
+	      the other $D_i$ pieces. (A piece is deleted only when a leaving executive
+	      makes it completely inaccessible, even to himself.)
+	\item It is easy to change the $D_i$ pieces without changing the original data
+	      $D$ --- all we need is a new polynomial $q(x)$ with the same free term.
+	      A frequent change of this type can greatly enhance security since the
+	      pieces exposed by security breaches cannot be accumulated unless all of
+	      them are values of the same edition of the $q(x)$ polynomial.
+	\item By using tuples of polynomial values as $D_i$ pieces, we can get a
+	      hierarchical scheme in which the number of pieces needed to determine $D$
+	      depends on their importance. For example, if we give the company's president
+	      three values of $q(x)$, each vice-president two values of $q(x)$, and each
+	      executive one value of $q(x)$, then a $(3, n)$ threshold scheme enables
+	      checks to be signed either by any three executives, or by any two executives
+	      one of whom is a vice-president, or by the president alone.
+\end{enumerate}
+
+A different (and somewhat less efficient) threshold scheme was recently developed by G.R. Blakley [2].
+
+% \end{document}
+
+\section{中文翻译}
+
+\begin{center}
+	\Large\textbf{如何共享秘密}
+
+	\vspace{0.5cm}
+	\large Adi Shamir\\
+	麻省理工学院
+\end{center}
+
+\vspace{0.5cm}
+
+本文展示了如何将数据$D$分割为$n$份，使得从任意$k$份中可以轻松重构$D$，
+但即使完全掌握$k-1$份也无法获取关于$D$的任何信息。该技术使得密码系
+统的密钥管理方案能够更加稳健，即使在不幸情况下丢失了一半的份额，
+安全漏洞暴露了除一份以外的所有剩余份额，系统仍能安全可靠地运行。
+
+\vspace{0.3cm}
+\noindent\textbf{关键词与短语：} 密码学，密钥管理，插值
+
+\noindent\textbf{CR分类：} 5:39, 5.6
+
+\subsection{引言}
+在文献[4]中，Liu考虑了以下问题：
+\begin{quote}
+	十一位科学家正在进行一个秘密项目。他们希望将文件锁在一个柜子里，
+	使得当且仅当六位或更多科学家在场时才能打开柜子。问题是：
+	最少需要多少把锁？每位科学家最少需要携带多少把钥匙？
+\end{quote}
+
+不难证明，最小解需要462把锁，每位科学家需要携带252把钥匙。
+这些数字显然不具有实用性，而且随着科学家数量的增加，这些数字会呈指数级增长。
+
+本文将问题推广为：秘密是某些数据$D$（例如，保险箱的组合密码），
+并且允许采用非机械的解决方案（对数据进行操作）。我们的目标
+是将$D$分割为$n$份$D_1, \ldots, D_n$，使得：
+
+\begin{enumerate}
+	\item 知道任意$k$个或更多$D_i$片段使得$D$易于计算；
+	\item 知道任意$k-1$个或更少$D_i$片段时，$D$完全不确定
+	      （即所有可能的值是等可能的）。
+\end{enumerate}
+
+这样的方案称为$(k, n)$门限方案。高效的门限方案在密码密钥管理中非常有用。
+为了保护数据，我们可以对其加密，但为了保护加密密钥，
+我们需要不同的方法（进一步加密只会改变问题而非解决问题）。
+最安全的密钥管理方案是将密钥保存在单一的、严密防护的位置
+（计算机、人脑或保险箱）。这种方案极不可靠，因为单一的不幸事件
+（计算机故障、突然死亡或破坏）可能使信息无法访问。一个明显的解决方
+案是在不同位置存储密钥的多个副本，但这增加了安全漏洞的危险
+（计算机入侵、背叛或人为错误）。通过使用$n = 2k - 1$的$(k, n)$门限方案，
+我们得到一个非常稳健的密钥管理方案：即使$\lfloor n/2 \rfloor = k - 1$个$n$份中的片段被销毁，
+我们仍能恢复原始密钥，但我们的对手即使在安全漏洞暴露了
+剩余$k$份中的$\lfloor n/2 \rfloor = k - 1$份时也无法重构密钥。
+
+在其他应用中，权衡不是在保密性和可靠性之间，而是在安全性和使用
+便利性之间。例如，考虑一家对所有支票进行数字签名的公司（参见RSA [5]）。
+如果每位高管都持有公司的秘密签名密钥副本，系统便于使用但容易被滥用。
+如果需要所有公司高管的合作才能签署每张支票，系统安全但不便利。
+标准解决方案要求每张支票至少有三个签名，这可以用$(3, n)$门限方案轻松实现。
+每位高管获得一张包含一个$D_i$片段的小型磁卡，公司的签名生成设备接受其
+中任意三张来生成（并随后销毁）实际签名密钥$D$的临时副本。该设备不包含
+任何秘密信息，因此不需要防止检查。在这种方案中，不忠诚的高管必须至少
+有两个同谋才能伪造公司签名。
+
+门限方案非常适合于那些具有冲突利益的互相怀疑的个体必须合作的应用。
+理想情况下，我们希望合作基于相互同意，但这种机制赋予每个成员的否决
+权可能会使集体活动陷入瘫痪。通过适当选择$k$和$n$参数，我们可以给予
+任何足够大的多数采取某些行动的权力，同时给予任何足够大的少数阻止它的能力。
+
+\subsection{一个简单的\texorpdfstring{$(k, n)$}{(k, n)}门限方案}
+我们的方案基于多项式插值：给定二维平面上的$k$个点$(x_1, y_1), \ldots, (x_k, y_k)$，
+其中$x_i$各不相同，存在唯一一个$k-1$次多项式$q(x)$使得对所有$i$都
+有$q(x_i) = y_i$。在不失一般性的情况下，我们可以假设数据$D$是（或可以
+转换为）一个数字。为了将其分割成片段$D_i$，我们选择一个随机的$k-1$次多
+项式$q(x) = a_0 + a_1x + \ldots + a_{k-1}x^{k-1}$，其中$a_0 = D$，并计算：
+
+$D_1 = q(1), \ldots, D_i = q(i), \ldots, D_n = q(n)$。
+
+给定这些$D_i$值中的任意$k$个子集（及其标识索引），我们可以通过插
+值找到$q(x)$的系数，然后计算$D = q(0)$。另一方面，仅掌握这些值
+中的$k-1$个不足以计算$D$。
+
+为了使这一声明更加精确，我们使用模运算而非实数运算。对素数$p$取模的整
+数集构成一个域，在该域中可以进行插值。给定整数值数据$D$，我们选择一
+个大于$D$和$n$的素数$p$。$q(x)$中的系数$a_1 \ldots a_{k-1}$从区间$[0, p)$内的整数
+上均匀分布中随机选择，$D_1, \ldots, D_n$的值按模$p$计算。
+
+现在假设这$n$个片段中的$k-1$个被泄露给对手。对于$[0, p)$中的每个候
+选值$D'$，他可以构造唯一一个$k-1$次多项式$q'(x)$，使得$q'(0) = D'$且
+对于给定的$k-1$个参数$i$有$q'(i) = D_i$。根据构造，这$p$个可能的多项式
+是等可能的，因此对手无法推断出$D$的真实值。
+
+多项式求值和插值的高效$O(n \log^2 n)$算法在[1]和[3]中有讨论，但即使是直
+接的二次算法对于实际的密钥管理方案也足够快。如果数字$D$较长，建议将其分
+解为较短的位块（分别处理），以避免多精度算术运算。这些块不能任意短，因为
+最小可用的$p$值是$n+1$（必须有至少$n+1$个不同的参数在$[0, p)$中以评
+估$q(x)$）。然而，这不是严重的限制，因为十六位模数（可由廉价的十六位
+算术单元处理）足以应用于最多64,000个$D_i$片段。
+
+与机械锁和钥匙解决方案相比，此$(k, n)$门限方案的一些有用特性是：
+
+\begin{enumerate}
+	\item 每个片段的大小不超过原始数据的大小。
+	\item 当$k$保持固定时，可以动态添加或删除$D_i$片段（例如，当高管加
+	      入或离开公司时），而不影响其他$D_i$片段。（仅当离开的高管使片段完
+	      全无法访问，甚至对自己也无法访问时，才删除该片段。）
+	\item 不改变原始数据$D$而改变$D_i$片段很容易——我们只需要一个具有相同常数项
+	      的新多项式$q(x)$。频繁进行这种类型的更改可以大大增强安全性，因为
+	      安全漏洞暴露的片段无法累积，除非它们都是同一版本$q(x)$多项式的值。
+	\item 通过使用多项式值的元组作为$D_i$片段，我们可以获得层次化方案，其中
+	      确定$D$所需的片段数量取决于它们的重要性。例如，如果我们给公司总裁
+	      三个$q(x)$的值，每位副总裁两个$q(x)$的值，每位高管一个$q(x)$的值
+	      ，那么$(3, n)$门限方案使得支票可以由任意三位高管签署，或由任意两位
+	      高管签署（其中一人是副总裁），或仅由总裁签署。
+\end{enumerate}
+
+最近，G.R. Blakley [2]开发了一种不同的（且效率稍低的）门限方案。

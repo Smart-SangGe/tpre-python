@@ -10,6 +10,7 @@
 \usepackage{caption}
 \captionsetup[figure]{font=small,labelsep=space}
 \captionsetup[table]{font=small,labelsep=space} %图片和表格修改caption
+\usepackage{enumitem} % 列表行间距
 
 
 \usepackage[final]{pdfpages}
@@ -35,6 +36,8 @@
 
 % 设置行间距 1.5倍
 \linespread{1.5}\selectfont
+% 设置列表间距
+\setlist{itemsep=-0.3\baselineskip}
 % 设置段与段之间的垂直距离 \parskip默认橡皮长度是0pt plus 1pt
 \setlength{\parskip}{0pt}
 \setlength{\headheight}{15pt} %设置页眉高度
