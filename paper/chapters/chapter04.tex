@@ -15,10 +15,12 @@
 		\hline
 		处理器            & AMD Ryzen 5 4500U (6) @ 2.38 GHz \\
 		操作系统           & Kali GNU/Linux Rolling x86\_64   \\
+		内核版本           & 6.12.20-amd64                    \\
 		\hline
 		\textbf{软件}    & \textbf{版本}                      \\
 		\hline
 		Python         & 3.13.3                           \\
+		clang          & 19.1.7                           \\
 		gmssl          & 3.2.1                            \\
 		SQLite         & 3.39.3                           \\
 		\hline
@@ -41,21 +43,13 @@
 		\textbf{软件}  & \textbf{版本}   \\
 		\hline
 		Docker       & 24.0.5        \\
-		Redis        & 7.0.11        \\
-		Node.js      & 18.16.0       \\
 		\hline
 	\end{tabular}
 \end{table}
 
 \section{功能测试}
 
-\subsection{密钥生成与管理测试}
-
-本节对分布式环境下基于国密的代理重加密系统的密钥生成与管理功能进行全面测试，
-验证系统在实际应用场景中的可靠性和安全性。密钥生成与管理是整个系统安全架
-构的基础，其正确性和安全性直接关系到系统的整体安全保障能力。
-
-\subsubsection{公私钥对生成测试}
+\subsection{公私钥对生成测试}
 
 公私钥对生成功能测试主要验证系统基于国密算法SM2的密钥生成机制。测试过程
 中，系统随机生成了多组密钥对，每组密钥对包含一个公钥（表现为椭圆曲线上
@@ -66,87 +60,166 @@
 线上的点）和私钥（形式为大整数）。多次调用该函数，验证了生成密钥的随
 机性，确保不同用户或同一用户在不同时间生成的密钥对是唯一的，从而保障了
 系统的安全性。
+如图\ref{fig:gen_pk_sk}所示。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/gen_pk_sk_1.png}
+		\includegraphics[width=0.95\textwidth]{images/chapters/gen_pk_sk_2.png}
+	\end{center}
+	\caption{生成公私密钥对}\label{fig:gen_pk_sk}
+\end{figure}
 
-\subsubsection{重加密密钥生成测试}
+\subsection{加密消息m}
+$m$为待加密消息'helloworld'，capsule\_ct为加密并封装后的消息。
 
-重加密密钥生成功能是代理重加密系统的核心，测试主要验证系统能否基于用
-户A的私钥和用户B的公钥正确生成重加密密钥片段。在测试中，系统为不同的
-代理节点（用节点标识id区分）生成了对应的重加密密钥片段。测试结果表明
-，即使在相同的A私钥和B公钥情况下，不同节点id生成的重加密密钥片段也各
-不相同，这保证了密钥片段的唯一性和安全性。
+capsule\_ct由$E$，$V$，id，$X_d$组成，其中$E$，$V$的形式为椭圆曲线上的一个点，id是哈希后产生的随机整数，$X_d$是bytes类型。
+如图\ref{fig:enc_msg}所示。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/enc_message_1.png}
+		\includegraphics[width=0.95\textwidth]{images/chapters/enc_message_2.png}
+	\end{center}
+	\caption{加密消息m}\label{fig:enc_msg}
+\end{figure}
 
-重加密密钥生成测试还验证了门限机制的有效性，通过设置不同的门限值T和节
-点数N，系统能够正确生成满足门限共享方案的重加密密钥片段集合，为后续
-的分布式重加密操作奠定基础。
+\subsection{重加密密钥生成}
+id\_tuple为代理节点的身份标识id，rekeys为生成的重加密密钥；在单次重加密中$sk_A$与$pk_B$已知，
+不同节点的id不同，其重加密密钥也就不同。
 
-\subsubsection{密钥分发和存储测试}
+图\ref{fig:generate_rekey_test}红框为测试中模拟的节点id，假设id从0开始递增，可以观察到重加密密钥片段成功生成，
+且不同id的节点，后面产生的重加密密钥不相同。
+\begin{figure}
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/generate_rekey_test_1.png}
+		\includegraphics[width=0.95\textwidth]{images/chapters/generate_rekey_test_2.png}
+	\end{center}
+	\caption{重加密密钥生成}\label{fig:generate_rekey_test}
+\end{figure}
 
-密钥分发和存储功能测试主要验证系统在分布式环境中安全传输和存储各类
-密钥的能力。测试过程中，系统成功将用户公钥、重加密密钥片段分发至相
-应的节点，并在各节点本地安全存储。测试结果显示，系统采用的HTTP协议
-传输机制和SQLite数据库存储方案能够有效支持密钥的安全分发和存储，并
-且具有较小的存储开销和较高的兼容性。
+\subsection{密文重加密}
+cfrag\_ct:重加密密文片段，用不同的重加密密钥片段对capsule\_ct进行重加密，
+其产生的重加密密文片段也不同。而每个id对应着一个代理节点服务器，同时对应着一个重加密密钥片段，
+运算后产生对应的重加密密文片段，也都各不相同。
 
-综合测试结果表明，系统的密钥生成和管理功能完善可靠，能够正确生成、
-分发和存储各类密钥，确保密钥的唯一性和安全性，为整个代理重加密系统
-的安全运行提供了坚实的基础。
+图\ref{fig:cfrag_cts}红框内的从0开始逐个递增的数字模拟为节点服务器的id，
+用于标识产生的不同的重加密密文片段。
+通过观察运行结果可以看出代理服务器节点利用自己收到的重加密密钥片段成功计算生成了对应重加密密文片段，
+不同id的点节服务器，产生的重加密密文片段也不同。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/cfrag_cts_1.png}
+		\includegraphics[width=0.95\textwidth]{images/chapters/cfrag_cts_2.png}
+	\end{center}
+	\caption{密文重加密}\label{fig:cfrag_cts}
+\end{figure}
 
-\subsection{加密解密测试}
+\subsection{重加密密文片段合并}
+cfrags为经过mergecfrag()函数合并后的重加密密文，用于后续的解密操作。
 
-加密解密功能作为代理重加密系统的核心操作，直接关系到系统的安全性
-和实用性。本节对系统的加密解密功能进行全面测试，验证其在实际应
-用场景中的可靠性和正确性。
+如图\ref{fig:mergecfrag_test}所示，cfrags由两大部分组成，
+一部分是由$T$个代理服务器节点用自己收到的重加密密钥对capsule\_ct进行重加密后产生的cfrag$_{i=[1..t]}$，
+里面带有产生这个重加密密文片段节点服务器的id，
+另一部分则是所有重加密密文片段相同的部分$enc\_Data$（重加密密文数据）。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/mergecfrag_test_1.png}
+		\includegraphics[width=0.95\textwidth]{images/chapters/mergecfrag_test_2.png}
+	\end{center}
+	\caption{重加密密文片段合并}\label{fig:mergecfrag_test}
+\end{figure}
 
-\subsubsection{原始数据加密测试}
+\subsection{解密}
+当传入DecryptFrags()函数的参数全部正确时，会成功解密重加密密文，
+得到原始数据$m$。这里设置初始明文$m=$'helloworld'。
 
-原始数据加密测试主要验证系统基于国密算法对原始明文数据进行加密的
-功能。在测试中，系统使用用户A的公钥对明文消息"Hello, PRE with SM2!"进
-行加密，生成加密并封装后的密文。测试结果显示，生成的密文由三部分组成
-：一个椭圆曲线上的点、一个哈希后产生的随机整数，以及经过对称加密后的
-数据。多次对相同明文进行加密，每次得到的密文均不同，这验证了加密算法
-的随机性和安全性。
+输入正确的B的私钥$sk_B$，B的公钥$pk_B$和A的公钥$pk_A$以及合并之后的重加密密文cfrags，
+经过解密之后，得到正确的解密数据。
+如图\ref{fig:decrypt_test}所示。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/dec_test_1.png}
+		\includegraphics[width=0.95\textwidth]{images/chapters/dec_test_2.png}
+	\end{center}
+	\caption{成功解密}\label{fig:decrypt_test}
+\end{figure}
 
-值得注意的是，系统采用了混合加密机制，使用SM2公钥算法进行密钥封装，使
-用SM4对称算法进行数据加密，这种组合既保证了安全性，又提高了加密效率
-，特别适合处理大量数据的场景。
+\section{系统云端运行结果}
 
-\subsubsection{重加密操作测试}
+程序运行场景:我们使用一台服务器作为中心服务器,用于记录代理节点的信息。
+使用两台服务器作为代理节点。使用两台服务器作为客户端。
+图\ref{fig:central_server_start_log}为中心服务器成功启动的日志。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/central_server_start_log.png}
+	\end{center}
+	\caption{中心服务器成功启动日志}\label{fig:central_server_start_log}
+\end{figure}
 
-重加密操作是代理重加密系统区别于传统加密系统的关键特性。测试主要验证系
-统能否使用预先生成的重加密密钥片段对密文进行重加密，生成重加密密文片
-段。测试结果表明，不同节点使用各自的重加密密钥片段对同一密文进行重加
-密，生成的重加密密文片段各不相同，这符合门限代理重加密的理论预期。
+图\ref{fig:node_start_log}为代理节点成功启动的日志。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/node_start_log.png}
+	\end{center}
+	\caption{代理节点成功启动的日志}\label{fig:node_start_log}
+\end{figure}
 
-进一步测试表明，如果使用相同的重加密密钥片段对密文进行重加密，将产生
-完全相同的重加密密文片段，这会破坏与重加密密钥的对应关系，导致后续解
-密失败。这一测试结果验证了系统正确实现了代理重加密算法，并能有效防止重
-加密密钥的错误使用。
+图\ref{fig:central_server_db_log}为中心服务器成功登记两个代理节点的信息，
+其中id是节点的唯一标识，ip为节点的ip地址，last\_heartbeat用于确认节点存活状态。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/central_server_db_log.png}
+	\end{center}
+	\caption{中心服务器数据库}\label{fig:central_server_db_log}
+\end{figure}
 
-\subsubsection{密文合并测试}
+图\ref{fig:central_server_msg_log}为中心服务器成功接收两个代理节点的心跳包，
+主要用于更新节点存活状态。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/central_server_msg_log.png}
+	\end{center}
+	\caption{中心服务器接收消息}\label{fig:central_server_msg_log}
+\end{figure}
 
-密文合并功能测试主要验证系统能否正确合并来自不同节点的重加密密文片段。
-在测试中，系统成功将多个节点生成的重加密密文片段合并为一个完整的重加
-密密文。测试结果显示，合并后的重加密密文由两部分组成：包含节点标识的
-重加密密文片段集合和所有片段共享的重加密密文数据。
+图\ref{fig:client_start_log}为客户端成功启动的日志。
+日志显示数据库成功初始化,并且成功从中心服务器获取代理节点信息。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/client_start_log.png}
+	\end{center}
+	\caption{客户端成功启动的日志}\label{fig:client_start_log}
+\end{figure}
 
-测试还验证了当重加密密文片段不完整或错误时，合并操作仍能完成，但后续解
-密将失败并返回错误提示，这保证了系统在片段丢失或错误情况下的健壮性。
+图\ref{fig:client_response}展现了中心服务器成功向客户端返回指定数量的代理节点信息
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/client_response.png}
+	\end{center}
+	\caption{中心服务器响应客户端}\label{fig:client_response}
+\end{figure}
 
-\subsubsection{解密验证测试}
+图\ref{fig:client_fe}是前端客户端程序向其他客户端请求信息并成功接收。
+图\ref{fig:client_fe}中为请求客户端地址;为请求消息的名称；
+最后一行为成功接收到的信息（+8字节随机数据）。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/client_fe.png}
+	\end{center}
+	\caption{前端客户端}\label{fig:client_fe}
+\end{figure}
 
-解密验证功能测试主要验证系统能否使用正确的密钥和重加密密文进行解密，
-恢复原始明文数据。测试分为两种情况：使用正确的参数进行解密和使用错误的参数进行解密。
 
-当使用接收方B的正确私钥、B的公钥、发送方A的公钥以及合并后的重加密
-密文进行解密时，系统成功恢复了原始明文数据"Hello, PRE with SM2!"，
-验证了整个加密、重加密和解密过程的正确性。
+图\ref{fig:client_be_db}为后端客户端程序从代理节点接收到的重加密信息。列为二进制形式存储的重加密密文,
+可用于恢复对称密钥;为使用对称密钥加密的密文; 为密文的发送方的地址（即我们请求的其他客户端）。
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/client_be_db.png}
+	\end{center}
+	\caption{后端客户端数据库}\label{fig:client_be_db}
+\end{figure}
 
-当使用错误的私钥（如将B的私钥替换为A的私钥）进行解密时，系统正确抛
-出了"Decryption failed"错误，这验证了系统的访问控制机制能够有效防止未授权访问。
+由于保密性,代理节点不存储密文。即使代理节点存储了密文,但是由于门限算法的约束,单个恶意节点无法恢复明文。
 
-综合测试结果表明，系统的加密解密功能完善可靠，能够正确完成原始数据加
-密、重加密操作、密文合并和解密验证等核心功能，保证了数据在传输和存储
-过程中的机密性和完整性。
 
 \section{性能测试}
 
@@ -159,8 +232,9 @@
 
 \subsubsection{测试配置与指标}
 
-性能测试在Intel Core i7-10750H CPU @ 2.60GHz处理器环境下进行，主要考
-察在不同节点数(N)和门限值(T)配置下的算法性能表现。测试指标包括以下六个方面：
+性能测试在AMD Ryzen 5 4500U处理器环境下进行，
+主要考察在不同节点数(N)和门限值(T)配置下的算法性能表现。
+测试指标包括以下六个方面：
 
 \begin{enumerate}
 	\item 算法总运行时间：完成整个加密、重加密和解密流程所需的总时间
@@ -182,6 +256,45 @@
 相对稳定，分别约为0.003秒和0.008秒，不受节点数变化影响。而重
 加密密钥生成时间和解密算法时间则随节点数增加而线性增长，这符
 合算法设计的理论预期，因为这两部分操作与节点数直接相关。
+如表\ref{tab:fixed_t}及图\ref{fig:fixed_t}所示。
+
+\begin{landscape}
+	\begin{table}[htbp]
+		\centering
+		\caption{控制门限T不变，算法运行时间表}
+		\label{tab:fixed_t}
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\multirow{2}{*}{节点个数N} & \multirow{2}{*}{门限值T} & 算法总运    & 密钥生成    & 加密算法    & 重加密密         & 重加密算     & 解密算法    \\
+			                       &                       & 行时间(s)  & 运行时间(s) & 运行时间(s) & 钥生成算法运行时间(s) & 法运行时间(s) & 运行时间(s) \\
+			\hline
+			4                      & 4                     & 0.07474 & 0.00341 & 0.00786 & 0.03038      & 0.01054  & 0.02958 \\
+			\hline
+			6                      & 4                     & 0.09987 & 0.00345 & 0.00789 & 0.04253      & 0.00990  & 0.04230 \\
+			\hline
+			8                      & 4                     & 0.11789 & 0.00325 & 0.00761 & 0.05141      & 0.01044  & 0.05223 \\
+			\hline
+			10                     & 4                     & 0.14616 & 0.00368 & 0.00825 & 0.06407      & 0.01020  & 0.06630 \\
+			\hline
+			12                     & 4                     & 0.16297 & 0.00330 & 0.00901 & 0.07148      & 0.01047  & 0.07575 \\
+			\hline
+			14                     & 4                     & 0.18638 & 0.00326 & 0.00784 & 0.08027      & 0.01002  & 0.09114 \\
+			\hline
+			16                     & 4                     & 0.20876 & 0.00325 & 0.00816 & 0.09117      & 0.01028  & 0.10254 \\
+			\hline
+			18                     & 4                     & 0.23014 & 0.00337 & 0.00749 & 0.09976      & 0.01027  & 0.11579 \\
+			\hline
+		\end{tabular}
+	\end{table}
+
+\end{landscape}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/fixed_t.png}
+	\end{center}
+	\caption{算法总运行时间折线图}\label{fig:fixed_t}
+\end{figure}
 
 \subsubsection{控制节点N不变的性能测试}
 
@@ -193,6 +306,47 @@
 这一发现具有重要的实践指导意义，表明在系统配置中，将门限值T设
 置为节点总数N的一半能够获得最佳的性能平衡。这与理论上的预期相
 符，因为这种配置在安全性和效率之间达到了最佳平衡点。
+如表\ref{tab:fixed_n}及图\ref{fig:fixed_n}所示。
+
+\begin{landscape}
+	\begin{table}[htbp]
+		\centering
+		\caption{控制节点N不变，算法运行时间表}
+		\label{tab:fixed_n}
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\makecell{节点个数                                                      \\N} & 门限值T & \makecell{算法总运\\行时间\\(s)} & \makecell{密钥生成\\运行时间\\(s)} & \makecell{加密算法\\运行时间\\(s)} & \makecell{重加密密\\钥生成算\\法运行时\\间(s)} & \makecell{重加密算\\法运行时\\间(s)} & \makecell{解密算法\\运行时间\\(s)} \\
+			\hline
+			20 & 2  & 0.25702 & 0.00332 & 0.00844 & 0.11137 & 0.01037 & 0.13018 \\
+			\hline
+			20 & 4  & 0.25943 & 0.00333 & 0.00806 & 0.11324 & 0.01002 & 0.13091 \\
+			\hline
+			20 & 6  & 0.26439 & 0.00318 & 0.00823 & 0.11070 & 0.01009 & 0.13875 \\
+			\hline
+			20 & 8  & 0.26148 & 0.00370 & 0.00794 & 0.11498 & 0.01037 & 0.13126 \\
+			\hline
+			20 & 10 & 0.25665 & 0.00337 & 0.00863 & 0.11158 & 0.01053 & 0.12951 \\
+			\hline
+			20 & 12 & 0.26319 & 0.00357 & 0.00850 & 0.11324 & 0.01027 & 0.13438 \\
+			\hline
+			20 & 14 & 0.26777 & 0.00345 & 0.00849 & 0.12178 & 0.01031 & 0.12832 \\
+			\hline
+			20 & 16 & 0.26163 & 0.00411 & 0.00919 & 0.11350 & 0.01010 & 0.13128 \\
+			\hline
+			20 & 18 & 0.26130 & 0.00325 & 0.00757 & 0.11283 & 0.01038 & 0.13379 \\
+			\hline
+		\end{tabular}
+	\end{table}
+\end{landscape}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/fixed_n.png}
+	\end{center}
+	\caption{N不变算法运行时间}\label{fig:fixed_n}
+\end{figure}
+
+
 
 \subsubsection{控制门限T为节点N一半的性能测试}
 
@@ -207,6 +361,45 @@
 综合分析表明，系统在不同配置下都表现出良好的性能特性，特别是当门限T
 为节点数N的一半时，系统性能最优。这一发现不仅验证了算法设计的合理
 性，也为系统在实际部署中的参数配置提供了重要参考。
+如表\ref{tab:half_n}及图\ref{fig:half_n}所示。
+
+\begin{landscape}
+	\begin{table}[htbp]
+		\centering
+		\caption{控制门限T为节点N的一半，算法运行时间表}
+		\label{tab:half_n}
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\makecell{节点个数                                                      \\N} & 门限值T & \makecell{算法总运\\行时间\\(s)} & \makecell{密钥生成\\运行时间\\(s)} & \makecell{加密算法\\运行时间\\(s)} & \makecell{重加密密\\钥生成算\\法运行时\\间(s)} & \makecell{重加密算\\法运行时\\间(s)} & \makecell{解密算法\\运行时间\\(s)} \\
+			\hline
+			4  & 2  & 0.07719 & 0.00341 & 0.00792 & 0.03173 & 0.01002 & 0.03057 \\
+			\hline
+			6  & 3  & 0.09806 & 0.00334 & 0.00747 & 0.04278 & 0.01011 & 0.04087 \\
+			\hline
+			8  & 4  & 0.11758 & 0.00325 & 0.00748 & 0.04939 & 0.00995 & 0.05356 \\
+			\hline
+			10 & 5  & 0.14253 & 0.00416 & 0.00867 & 0.06216 & 0.01018 & 0.06368 \\
+			\hline
+			12 & 6  & 0.16258 & 0.00383 & 0.00782 & 0.07178 & 0.01016 & 0.07559 \\
+			\hline
+			14 & 7  & 0.18690 & 0.00342 & 0.00905 & 0.08760 & 0.01040 & 0.09016 \\
+			\hline
+			16 & 8  & 0.20920 & 0.00331 & 0.00754 & 0.09289 & 0.01026 & 0.10092 \\
+			\hline
+			18 & 9  & 0.24200 & 0.00336 & 0.00844 & 0.10238 & 0.01022 & 0.12431 \\
+			\hline
+			20 & 10 & 0.25606 & 0.00329 & 0.00747 & 0.10931 & 0.01025 & 0.13245 \\
+			\hline
+		\end{tabular}
+	\end{table}
+\end{landscape}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[width=0.95\textwidth]{images/chapters/half_n.png}
+	\end{center}
+	\caption{T为N的一半时运行时间}\label{fig:half_n}
+\end{figure}
 
 \subsection{系统响应时间测试}
 
@@ -229,7 +422,8 @@
 
 测试结果显示，系统采用的异步处理机制能够有效处理并发请求，在测试
 的20个并发请求场景下，系统总处理时间约为1.82秒，平均每个请求的
-处理时间约为0.31秒。与同步处理方式相比，异步处理提升了约40\%的效率，证明了系统在高并发场景下的优异性能。
+处理时间约为0.31秒。与同步处理方式相比，异步处理提升了约40\%的效率，
+证明了系统在高并发场景下的优异性能。
 
 \subsubsection{通信延迟测试}
 
